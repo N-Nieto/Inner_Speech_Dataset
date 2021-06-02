@@ -148,14 +148,6 @@ def Transform_for_classificator (X,Y,Class):
         
     return X_data2 , Y_data
 
-# In[]
-def Corrected_labels (Y):
-    
-    # Correct the labels to 0 - 1 - 2 - 3
-    Y_fix=Y[:,1]-31 
-    Y[:,1]=Y_fix
-    
-    return Y
 
 # In[]
 def Average_in_frec(power, frec, bands):
