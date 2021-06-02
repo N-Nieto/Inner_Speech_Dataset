@@ -466,7 +466,7 @@ def Delete_trigger(events):
  # In[]   
 def Standarized_labels(events):
     
-    events[:,1]=events[:,1]-30
+    events[:,1]=events[:,1]-31
     
     return events
 
