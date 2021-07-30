@@ -1,5 +1,7 @@
 # Inner Speech Dataset
 
+# Important! on 30 July 2021 several corrupted files were fixed in the repository.
+
 In the following repository all codes for reproduce and use the Inner speech Dataset are presented.
 
 The dataset are publicy available at https://openneuro.org/datasets/ds003626
