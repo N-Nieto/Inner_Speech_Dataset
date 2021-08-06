@@ -1,0 +1,13 @@
+name: inner_speech
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.6
+  - mne=0.22.0
+  - pip
+  - matplotlib
+  - numpy
+  - spyder=4.2.1
+  - pip:
+     - pickle-mixin
