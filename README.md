@@ -1,6 +1,6 @@
 # Inner Speech Dataset
 
-# Important! on 30 July 2021 several corrupted files were fixed in the repository.
+# Important! on 30 July 2021 several corrupted files were fixed in the data repository.
 
 In the following repository all codes for reproduce and use the Inner speech Dataset are presented.
 
