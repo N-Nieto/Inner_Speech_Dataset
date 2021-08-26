@@ -81,72 +81,44 @@ def Filter_by_condition(X, Y, Condition):
     return X , Y
 
 # In[]
-def Transform_for_classificator (X,Y,Class):
+
+def Transform_for_classificator (X,Y,Classes,Conditions):
+    from Data_processing import  Filter_by_class, Filter_by_condition
+
     import numpy as np
     
-    if Class == ['All'] or Class == ['all']:
-        X_data2 = X
-        Y_data = Y
-        
-    else: 
-        N_class = len(Class)
-        Y_data = []
-        X_data = dict()
-        X_data2 = []
-        
-        for N_c in range(N_class):
-            
-            if Class[N_c] == "up" or Class[N_c] == "Up" or Class[N_c] =="Arriba " or Class[N_c] ==" arriba":
-                cl = 0
-            elif Class[N_c] == "down" or Class[N_c] == "Down" or Class[N_c] == "Abajo" or Class[N_c] == "abajo":
-                cl = 1
-            elif Class[N_c] == "right" or Class[N_c] == "Right" or Class[N_c] == "Derecha" or Class[N_c] == "derecha":
-                cl = 2
-            elif Class[N_c] == "left" or Class[N_c] == "Left" or Class[N_c] == "Izquierda" or Class[N_c] == "izquierda":
-                cl = 3
-            else:
-                print("Invalid class")
-                
-           # Apilate the selected data
-            X_data[N_c]= X[Y[:,1]==cl]        
-          
-        """ TODO: more eficient way to do this
-        """
-        if N_class== 1:
-            X_data2 = X_data[0]
-            Y_data = np.zeros(X_data[0].shape[0])
-            
-        elif N_class == 2:
-                
-            X_data2 = np.vstack((X_data[0],X_data[1]))
-            
-            Label_0 = np.zeros(X_data[0].shape[0])
-            Label_1 = np.ones(X_data[1].shape[0])
-            
-            Y_data = np.hstack((Label_0,Label_1))  
-            
-        elif N_class == 3:
-            
-            X_data2=np.vstack((X_data[0],X_data[1],X_data[2]))   
+    N_grups_cl = len(Conditions[:])
     
-            Label_0 = np.zeros(X_data[0].shape[0])
-            Label_1 = np.ones(X_data[1].shape[0])
-            Label_2 = 2*np.ones(X_data[2].shape[0])
-            
-            Y_data=np.hstack((Label_0,Label_1,Label_2))  
-            
-        elif N_class== 4:
-            
-            X_data2=np.vstack((X_data[0],X_data[1],X_data[2],X_data[3]))
-            
-            Label_0 = np.zeros(X_data[0].shape[0])
-            Label_1 = np.ones(X_data[1].shape[0])
-            Label_2 = 2*np.ones(X_data[2].shape[0])
-            Label_3 = 3*np.ones(X_data[3].shape[0])
-            
-            Y_data=np.hstack((Label_0,Label_1,Label_2,Label_3))  
+    N_grups_cond = len(Classes[:])
+    
+    if not N_grups_cl == N_grups_cond:
+        print("Incorrect Number of Conditions or Classses")
         
-    return X_data2 , Y_data
+    for N_gr in range(N_grups_cl):
+        
+        N_ind_cond = len(Conditions[N_gr])
+        N_ind_clas = len(Classes[N_gr])
+        
+        if not N_ind_cond == N_ind_clas:
+            print("Incorrect Number of Conditions or Classses")
+        
+        for N_ind  in range(N_ind_clas): 
+    
+            Cond = Conditions[N_gr][N_ind]
+            Class = Classes[N_gr][N_ind]
+           
+            X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
+            X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
+            
+            if N_ind == 0 and N_gr ==0:
+                X_final = X_aux
+                Y_final = N_gr*(np.ones(len(Y_aux)))
+            else:
+                X_final = np.vstack([X_final, X_aux])
+                Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
+
+    
+    return X_final, Y_final
 
 
 # In[]
