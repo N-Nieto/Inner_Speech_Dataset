@@ -83,7 +83,6 @@ def Filter_by_condition(X, Y, Condition):
 # In[]
 
 def Transform_for_classificator (X,Y,Classes,Conditions):
-    
     import numpy as np
     
     N_grups_cl = len(Conditions[:])
