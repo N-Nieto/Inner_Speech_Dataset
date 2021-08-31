@@ -31,3 +31,16 @@ The `TFR_representation.py`  generates the Time Frequency Representations used a
 
 By means of the `Plot_TFR_Topomap.py` the same images presented in the paper can be addressed.
 
+
+
+## Citing this work
+
+Please cite this work.
+```bibtex
+@article{nieto2021thinking,
+  title={" Thinking out loud": an open-access EEG-based BCI dataset for inner speech recognition},
+  author={Nieto, Nicolas and Peterson, Victoria and Rufiner, Hugo Leonardo and Kamienkowski, Juan and Spies, Ruben},
+  journal={bioRxiv},
+  year={2021},
+  publisher={Cold Spring Harbor Laboratory}
+}
