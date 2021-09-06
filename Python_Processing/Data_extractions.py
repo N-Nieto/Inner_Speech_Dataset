@@ -138,3 +138,63 @@ def Extract_TFR(TRF_dir, Cond, Class, TFR_method , TRF_type):
     return TRF
 
 
+
+def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
+    """
+    Load all blocks for a list of subject and stack the results in X
+    """
+    import mne
+    import numpy as np
+    
+        
+    data=dict()
+    y=dict()
+    N_B_arr=[1,2,3]
+    S = 0
+    for N_S in N_S_list:
+        for N_B in N_B_arr:
+    
+            # name correction if N_Subj is less than 10
+            if N_S<10:
+                Num_s='sub-0'+str(N_S)
+            else:
+                Num_s='sub-'+str(N_S)
+                
+    
+            file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_events.dat'
+            y[N_B] = np.load(file_name,allow_pickle=True)
+            
+            if datatype=="EEG" or datatype=="eeg":
+                #  load data and events
+                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_eeg-epo.fif'
+                X= mne.read_epochs(file_name,verbose='WARNING')
+                data[N_B]= X._data
+                
+            elif datatype=="EXG" or datatype=="exg":
+                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_exg-epo.fif'
+                X= mne.read_epochs(file_name,verbose='WARNING')
+                data[N_B]= X._data
+            
+            elif datatype=="Baseline" or datatype=="baseline":
+                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_baseline-epo.fif'
+                X= mne.read_epochs(file_name,verbose='WARNING')
+                data[N_B]= X._data
+    
+            else:
+                print("Invalid Datatype")
+        
+        X = np.vstack((data.get(1),data.get(2),data.get(3))) 
+        Y = np.vstack((y.get(1),y.get(2),y.get(3))) 
+        
+        if S == 0 :
+            
+            X_final = X
+            Y_final = Y
+        else:
+            X_final = np.vstack([X_final, X])
+            Y_final = np.vstack([Y_final, Y])
+                
+        S = S + 1
+    
+
+    return X_final, Y_final
