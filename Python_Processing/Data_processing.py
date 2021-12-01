@@ -176,46 +176,42 @@ def Split_trial_in_time(X, Y, window_len, window_step, fs):
     
     import numpy as np
     
-    N_Trials,n_chanels,t_max=X.shape
+    t = time.time()
     
-    # Signal crop in time
-    initial_sample= 0
-    Last_sample= round(t_max)
+    N_Trials,n_chanels,t_max=X.shape
+
     
     # Window parameters
     FC_window_len = round(fs*window_len)
-    FC_window_step = round(fs*window_step)  
+    FC_window_step = round(fs*window_step)
+
+    
+    #Crop sections 
+    split_section = int(t_max//FC_window_len)
+    remainder = t_max % split_section
+    if(remainder != 0):
+      X = X[:,:,:-remainder]
     
     # Initializations
     X_final=[]
+    Y_final=np.repeat(Y, split_section, axis=0)
     
     # Main loop
     for N_tr in range(N_Trials):
         X_t = X[N_tr,:,:]
-        Y_t = Y[N_tr]
-        initial_sample= 0
-        final_sample = 0
-        while final_sample<=Last_sample and initial_sample<t_max:
-            
-            final_sample= initial_sample + FC_window_len 
-        
-            # window signal
-            if initial_sample<final_sample:
-                signal_cut= X_t[:,initial_sample:final_sample]
-            
-                # Calculate the energy of the window signal
-                if initial_sample==0 and N_tr==0:
-                    signal_cut = np.stack([signal_cut])
-                    X_final = signal_cut
-                    Y_final = Y_t
-                else:
-                    signal_cut = np.stack([signal_cut])
-                    X_final = np.vstack([X_final,signal_cut])
-                    Y_final = np.vstack([Y_final, Y_t])
-            # actualizate new initial sample for next
-            initial_sample=initial_sample+ FC_window_step
-    
-    return X_final, Y_final
+        # Y_t = Y[N_tr]
+
+        X_t = np.split(X_t, split_section, axis=1)
+        X_t = np.array(X_t)
+        if (len(X_final) == 0):
+          X_final = X_t
+        else:
+          X_final = np.vstack([X_final, X_t])
+
+    #Execution time
+    elapsed = time.time() - t
+
+    return X_final, Y_final, elapsed
 
     
     
