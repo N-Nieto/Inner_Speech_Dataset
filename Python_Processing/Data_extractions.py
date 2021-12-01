@@ -145,13 +145,17 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
     """
     import mne
     import numpy as np
-    
+    import gc
         
-    data=dict()
-    y=dict()
-    N_B_arr=[1,2,3]
+    N_B_arr = [1,2,3]
+    tmp_list_X = []
+    tmp_list_Y = []
+    rows = []
+    total_elem = len(N_S_list)*3 # assume 3 sessions per subject
     S = 0
     for N_S in N_S_list:
+        print("Iteration ", S)
+        print("Subject ", N_S)
         for N_B in N_B_arr:
     
             # name correction if N_Subj is less than 10
@@ -159,17 +163,24 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
                 Num_s='sub-0'+str(N_S)
             else:
                 Num_s='sub-'+str(N_S)
-                
-    
+
             file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_events.dat'
-            y[N_B] = np.load(file_name,allow_pickle=True)
+            data_tmp_Y=np.load(file_name,allow_pickle=True)
+            tmp_list_Y.append(data_tmp_Y)
             
             if datatype=="EEG" or datatype=="eeg":
                 #  load data and events
                 file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_eeg-epo.fif'
-                X= mne.read_epochs(file_name,verbose='WARNING')
-                data[N_B]= X._data
-                
+                print("Inner iteration " , N_B)
+                data_tmp_X=mne.read_epochs(file_name,verbose='WARNING')._data
+                rows.append(data_tmp_X.shape[0])
+                if S == 0: # assume same number of channels, time steps, and column labels in every subject and session
+                  chann=data_tmp_X.shape[1]
+                  steps=data_tmp_X.shape[2]
+                  columns=data_tmp_Y.shape[1]
+                tmp_list_X.append(data_tmp_X)
+            
+            # ToDo improvement not applied to exg and baseline datatypes yet
             elif datatype=="EXG" or datatype=="exg":
                 file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_exg-epo.fif'
                 X= mne.read_epochs(file_name,verbose='WARNING')
@@ -183,18 +194,20 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
             else:
                 print("Invalid Datatype")
         
-        X = np.vstack((data.get(1),data.get(2),data.get(3))) 
-        Y = np.vstack((y.get(1),y.get(2),y.get(3))) 
-        
-        if S == 0 :
-            
-            X_final = X
-            Y_final = Y
-        else:
-            X_final = np.vstack([X_final, X])
-            Y_final = np.vstack([Y_final, Y])
-                
-        S = S + 1
-    
+        S += 1
 
-    return X_final, Y_final
+    X = np.empty((sum(rows), chann, steps))
+    Y = np.empty((sum(rows), columns))
+    offset = 0
+    # put elements of list into numpy array
+    for i in range(total_elem):
+      print("Saving element into array: ", i)
+      X[offset:offset+rows[i],:,:] = tmp_list_X[0]
+      Y[offset:offset+rows[i],:] = tmp_list_Y[0]
+      offset+=rows[i]
+      del tmp_list_X[0]
+      del tmp_list_Y[0]
+      gc.collect()
+    print("X shape", X.shape)
+    print("Y shape", Y.shape)
+    return X,Y
