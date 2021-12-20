@@ -173,7 +173,7 @@ def Filter_by_class (X,Y,Class):
 
 
 def Split_trial_in_time(X, Y, window_len, window_step, fs):
-    
+    import time
     import numpy as np
     
     t = time.time()
