@@ -173,10 +173,10 @@ def Filter_by_class (X,Y,Class):
 
 
 def Split_trial_in_time(X, Y, window_len, window_step, fs):
-    import time
+
     import numpy as np
     
-    t = time.time()
+    
     print("X shape entrada",X.shape)
     print("Y shape entrada",Y.shape)
     N_Trials,n_chanels,t_max=X.shape
@@ -212,10 +212,8 @@ def Split_trial_in_time(X, Y, window_len, window_step, fs):
         else:
           X_final = np.vstack([X_final, X_t])
 
-    #Excecution time
-    elapsed = time.time() - t
 
-    return X_final, Y_final, elapsed
+    return X_final, Y_final
 
     
     
