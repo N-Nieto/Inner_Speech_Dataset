@@ -145,13 +145,17 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
     """
     import mne
     import numpy as np
-    
+    import gc
         
-    data=dict()
-    y=dict()
-    N_B_arr=[1,2,3]
+    N_B_arr = [1,2,3]
+    tmp_list_X = []
+    tmp_list_Y = []
+    rows = []
+    total_elem = len(N_S_list)*3 # assume 3 sessions per subject
     S = 0
     for N_S in N_S_list:
+        print("Iteration ", S)
+        print("Subject ", N_S)
         for N_B in N_B_arr:
     
             # name correction if N_Subj is less than 10
@@ -159,42 +163,69 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
                 Num_s='sub-0'+str(N_S)
             else:
                 Num_s='sub-'+str(N_S)
-                
-    
-            file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_events.dat'
-            y[N_B] = np.load(file_name,allow_pickle=True)
-            
+
+            base_file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B) 
+            events_file_name = base_file_name+'_events.dat'
+            data_tmp_Y = np.load(events_file_name,allow_pickle=True)
+            tmp_list_Y.append(data_tmp_Y)
+            print("Inner iteration " , N_B)
             if datatype=="EEG" or datatype=="eeg":
-                #  load data and events
-                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_eeg-epo.fif'
-                X= mne.read_epochs(file_name,verbose='WARNING')
-                data[N_B]= X._data
-                
+                # load data and events
+                eeg_file_name = base_file_name+'_eeg-epo.fif'
+                data_tmp_X = mne.read_epochs(eeg_file_name,verbose='WARNING')._data
+                rows.append(data_tmp_X.shape[0])
+                if S == 0 and N_B == 1: # assume same number of channels, time steps, and column labels in every subject and session
+                  chann=data_tmp_X.shape[1]
+                  steps=data_tmp_X.shape[2]
+                  columns=data_tmp_Y.shape[1]
+                tmp_list_X.append(data_tmp_X)
+
             elif datatype=="EXG" or datatype=="exg":
-                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_exg-epo.fif'
-                X= mne.read_epochs(file_name,verbose='WARNING')
-                data[N_B]= X._data
+                exg_file_name = base_file_name+'_exg-epo.fif'
+                data_tmp_X = mne.read_epochs(exg_file_name,verbose='WARNING')._data
+                rows.append(data_tmp_X.shape[0])
+                if S == 0 and N_B == 1:
+                  chann=data_tmp_X.shape[1]
+                  steps=data_tmp_X.shape[2]
+                  columns=data_tmp_Y.shape[1]
+                tmp_list_X.append(data_tmp_X)
             
             elif datatype=="Baseline" or datatype=="baseline":
-                file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_baseline-epo.fif'
-                X= mne.read_epochs(file_name,verbose='WARNING')
-                data[N_B]= X._data
+                baseline_file_name = base_file_name+'_baseline-epo.fif'
+                data_tmp_X = mne.read_epochs(baseline_file_name,verbose='WARNING')._data
+                rows.append(data_tmp_X.shape[0])
+                if S == 0 and N_B == 1:
+                  chann=data_tmp_X.shape[1]
+                  steps=data_tmp_X.shape[2]
+                  columns=data_tmp_Y.shape[1]
+                tmp_list_X.append(data_tmp_X)
     
             else:
                 print("Invalid Datatype")
+                return None, None
         
-        X = np.vstack((data.get(1),data.get(2),data.get(3))) 
-        Y = np.vstack((y.get(1),y.get(2),y.get(3))) 
-        
-        if S == 0 :
-            
-            X_final = X
-            Y_final = Y
-        else:
-            X_final = np.vstack([X_final, X])
-            Y_final = np.vstack([Y_final, Y])
-                
-        S = S + 1
-    
+        S += 1
 
-    return X_final, Y_final
+    X = np.empty((sum(rows), chann, steps))
+    Y = np.empty((sum(rows), columns))
+    offset = 0
+    offset_Y = 0
+    # put elements of list into numpy array
+    for i in range(total_elem):
+      print("Saving element {} into array ".format(i))
+      X[offset:offset+rows[i],:,:] = tmp_list_X[0]
+      if datatype=="EEG" or datatype=="eeg" or datatype=="EXG" or datatype=="exg":
+        Y[offset:offset+rows[i],:] = tmp_list_Y[0] # only build Y for the datatypes that uses it
+      offset+=rows[i]
+      del tmp_list_X[0]
+      del tmp_list_Y[0]
+      gc.collect()
+    print("X shape", X.shape)
+    print("Y shape", Y.shape)
+
+    if datatype=="EEG" or datatype=="eeg" or datatype=="EXG" or datatype=="exg":
+      # for eeg and exg types, there is a predefined label that is returned
+      return X,Y
+    else:
+      # for baseline datatypes, there's no such label (rest phase)
+      return X
