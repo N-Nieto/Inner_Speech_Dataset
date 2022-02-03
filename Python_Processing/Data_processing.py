@@ -191,7 +191,7 @@ def Split_trial_in_time(X, Y, window_len, window_step, fs):
     
     #if there is a remainder, just drop it
     remainder = t_max % split_section
-    print("reminder", remainder)
+    
     if(remainder != 0):
       X = X[:,:,:-remainder]
     
