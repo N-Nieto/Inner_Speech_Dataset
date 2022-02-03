@@ -21,11 +21,11 @@ The processing was developed in Python, using mainly the MNE library.
 
 ### Install the Inner speech processing environment
 
-For creating an environment with all the necessary libraries for running all the scripts executed.
+Create an environment with all the necessary libraries for running all the scripts.
 
 `conda env create -f environment.yml`
 
-Using the `Inner_speech_processing.py` script, you can easily make your own processing, changing the variables at the top.
+Using the `Inner_speech_processing.py` script, you can easily make your own processing, changing the variables at the top of the script.
 
 The `TFR_representation.py`  generates the Time Frequency Representations used addressing the same processing followed in the paper.
 
