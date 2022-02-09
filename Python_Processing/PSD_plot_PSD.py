@@ -24,12 +24,12 @@ root_dir = "../"
 save_dir = "../"
 
 # Subjets
-N_S_list=[1,2,3,4,5,6,7,8,9,10]
+N_S_list = [1,2,3,4,5,6,7,8,9,10]
 
 # Data Parameters
-datatype="EEG"
-Condition_list=["Inner","Vis"]
-Classes_list=["All"]
+datatype = "EEG"
+Condition_list = ["Inner","Vis"]
+Classes_list = ["All"]
 channel = "A26"
 # Get picks for the selected channels
 picks = picks_from_channels(channel)
@@ -37,7 +37,7 @@ picks = ["A26"]
 
 
 save_bool = True
-prefix="Power_Spectral_density_inner_vs_vis_beta"
+prefix = "Power_Spectral_density_inner_vs_vis_beta"
 
 #Fix all random states
 random_state = 23
@@ -66,10 +66,10 @@ colors = ["darkred","midnightblue"]    # "midnightblue" - "darkred" - "darkcyan"
 N_B = 1
 N_S = 1
 # Load a single subject to use the Epoched Object structure
-X_S,Y= Extract_block_data_from_subject(root_dir,N_S,datatype,N_B=N_B)
+X_S, Y = Extract_block_data_from_subject(root_dir,N_S,datatype,N_B=N_B)
 
-Adquisition_eq="biosemi128"
-montage=mne.channels.make_standard_montage(Adquisition_eq)
+Adquisition_eq = "biosemi128"
+montage = mne.channels.make_standard_montage(Adquisition_eq)
 X_S.set_montage(montage)
 
 
@@ -77,14 +77,14 @@ X_S.set_montage(montage)
 # In[]: Load Data
 fig = plt.figure(figsize = [13, 10])
 axs = plt.axes()
-n_plot=0
+n_plot = 0
 for Classes in Classes_list: 
     for Cond in Condition_list:
-        count=1
+        count = 1
         for N_S in N_S_list:
 
             # Load full subject's data
-            X, Y = Extract_data_from_subject(root_dir, N_S, datatype)
+            X , Y = Extract_data_from_subject(root_dir, N_S, datatype)
         
             # Filter by condition
             X_cond , Y_cond = Filter_by_condition(X, Y, Condition = Cond)
@@ -92,7 +92,7 @@ for Classes in Classes_list:
             # Filter by class
             X_class , Y_class =  Filter_by_class(X_cond,Y_cond,Class=Classes)
             
-            if count==1:  
+            if count == 1:  
                 X_data = X_class
                 Y_data = Y_class
                 count  = 2
