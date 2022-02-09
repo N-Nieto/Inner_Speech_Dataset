@@ -21,7 +21,7 @@ from Utilitys import Ensure_dir, picks_from_channels
 # Root where the data are stored
 root_dir = "../"
 
-save_dir = "/media/nnieto/50e793fa-4717-4997-b590-b4167be63ee7/home/nnieto/Escritorio/Nico/Doctorado/Tesis/LIAA - sinc(i)/Toma de datos/Analisis/PSD/Dataset final/PSD_Spectrum/"
+save_dir = "../"
 
 # Subjets
 N_S_list=[1,2,3,4,5,6,7,8,9,10]
