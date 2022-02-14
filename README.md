@@ -6,7 +6,7 @@ In the following repository all codes for reproduce and use the Inner speech Dat
 
 The dataset are publicy available at https://openneuro.org/datasets/ds003626
 
-The preprint of the publicatin are available at https://www.biorxiv.org/content/10.1101/2021.04.19.440473v1
+The publicatin are available at https://www.nature.com/articles/s41597-022-01147-2
 
 
 ## Stimulation Protocol
@@ -35,12 +35,6 @@ By means of the `Plot_TFR_Topomap.py` the same images presented in the paper can
 
 ## Citing this work
 
-Please cite this work.
-```bibtex
-@article{nieto2021thinking,
-  title={" Thinking out loud": an open-access EEG-based BCI dataset for inner speech recognition},
-  author={Nieto, Nicolas and Peterson, Victoria and Rufiner, Hugo Leonardo and Kamienkowski, Juan and Spies, Ruben},
-  journal={bioRxiv},
-  year={2021},
-  publisher={Cold Spring Harbor Laboratory}
-}
+Please cite this work: 
+
+Nieto, N., Peterson, V., Rufiner, H.L. et al. Thinking out loud, an open-access EEG-based BCI dataset for inner speech recognition. Sci Data 9, 52 (2022). https://doi.org/10.1038/s41597-022-01147-2
