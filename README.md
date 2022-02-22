@@ -1,6 +1,6 @@
 # Inner Speech Dataset
 
-# Important! on 30 July 2021 several corrupted files were fixed in the data repository.
+# Important! on 30 July 2021 several corrupted files were fixed in the data repository. On 25 Novembrer 2021, EEG data for participants 9 and 10 were also fixed in the repository.
 
 In the following repository all codes for reproduce and use the Inner speech Dataset are presented.
 
@@ -35,6 +35,17 @@ By means of the `Plot_TFR_Topomap.py` the same images presented in the paper can
 
 ## Citing this work
 
-Please cite this work: 
+Please cite this work.
+```bibtex
+@article{nieto2022thinking,
+  title={Thinking out loud, an open-access EEG-based BCI dataset for inner speech recognition},
+  author={Nieto, Nicol{\'a}s and Peterson, Victoria and Rufiner, Hugo Leonardo and Kamienkowski, Juan Esteban and Spies, Ruben},
+  journal={Scientific Data},
+  volume={9},
+  number={1},
+  pages={1--17},
+  year={2022},
+  publisher={Nature Publishing Group}
+}
 
-Nieto, N., Peterson, V., Rufiner, H.L. et al. Thinking out loud, an open-access EEG-based BCI dataset for inner speech recognition. Sci Data 9, 52 (2022). https://doi.org/10.1038/s41597-022-01147-2
+```
