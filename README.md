@@ -4,9 +4,9 @@
 
 In the following repository all codes for reproduce and use the Inner speech Dataset are presented.
 
-The dataset are publicy available at https://openneuro.org/datasets/ds003626
+The dataset is publicy available at https://openneuro.org/datasets/ds003626
 
-The publicatin are available at https://www.nature.com/articles/s41597-022-01147-2
+The publication is available at https://www.nature.com/articles/s41597-022-01147-2
 
 
 ## Stimulation Protocol
