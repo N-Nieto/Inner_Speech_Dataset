@@ -47,7 +47,7 @@ def Calculate_power_windowed(signal_data, fc, window_len, window_step, t_min, t_
     return m_power , std_power
 
 # In[]
-def Select_time_window(X,t_start=1,t_end=2.5,fs=254):
+def Select_time_window(X,t_start=1,t_end=2.5,fs=256):
     import numpy as np
     
     # Delet the pre interval
