@@ -47,17 +47,15 @@ def Calculate_power_windowed(signal_data, fc, window_len, window_step, t_min, t_
     return m_power , std_power
 
 # In[]
-def Select_time_window(X,t_start=1,t_end=2.5,fs=256):
+def Select_time_window(X,t_start=1, t_end=2.5, fs=256):
     import numpy as np
     
-    # Delet the pre interval
-    X = np.delete(X,range(round(t_start*fs)),axis=2)
-    
     t_max=X.shape[2]
-    
-    # Delet the post interval
-    X = np.delete(X,range(round(t_end*fs-t_start*fs),t_max),axis=2)
-    
+    start = max(round(t_start * fs), 0)
+    end = min(round(t_end * fs), t_max)
+
+    #Copy interval
+    X = X[:, :, start:end]
     return X
 
 # In[]
