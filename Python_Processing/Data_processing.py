@@ -84,36 +84,35 @@ def Transform_for_classificator (X,Y,Classes,Conditions):
     import numpy as np
     
     N_grups_cl = len(Conditions[:])
-    
     N_grups_cond = len(Classes[:])
-    
-    if not N_grups_cl == N_grups_cond:
-        print("Incorrect Number of Conditions or Classses")
-        
+  
+    if N_grups_cl != N_grups_cond:
+      raise Exception("Incorrect number of conditions or classses")
+      
     for N_gr in range(N_grups_cl):
-        
-        N_ind_cond = len(Conditions[N_gr])
-        N_ind_clas = len(Classes[N_gr])
-        
-        if not N_ind_cond == N_ind_clas:
-            print("Incorrect Number of Conditions or Classses")
-        
-        for N_ind  in range(N_ind_clas): 
-    
-            Cond = Conditions[N_gr][N_ind]
-            Class = Classes[N_gr][N_ind]
-           
-            X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
-            X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
-            
-            if N_ind == 0 and N_gr ==0:
-                X_final = X_aux
-                Y_final = N_gr*(np.ones(len(Y_aux)))
-            else:
-                X_final = np.vstack([X_final, X_aux])
-                Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
 
-    
+      N_ind_cond = len(Conditions[N_gr])
+      N_ind_clas = len(Classes[N_gr])
+
+      if N_ind_cond != N_ind_clas:
+          raise Exception("Incorrect number of conditions or classses")
+
+      for N_ind in range(N_ind_clas): 
+
+          Cond = Conditions[N_gr][N_ind]
+          Class = Classes[N_gr][N_ind]
+
+          X_aux , Y_aux = filter_by_condition(X,Y,Cond)
+          X_aux , Y_aux =  filter_by_class(X_aux,Y_aux,Class)
+
+          if N_ind == 0 and N_gr == 0:
+              X_final = X_aux
+              Y_final = N_gr*(np.ones(len(Y_aux)))
+          else:
+              X_final = np.vstack([X_final, X_aux])
+              Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
+
+
     return X_final, Y_final
 
 
