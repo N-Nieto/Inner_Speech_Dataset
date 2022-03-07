@@ -102,8 +102,8 @@ def Transform_for_classificator (X,Y,Classes,Conditions):
           Cond = Conditions[N_gr][N_ind]
           Class = Classes[N_gr][N_ind]
 
-          X_aux , Y_aux = filter_by_condition(X,Y,Cond)
-          X_aux , Y_aux =  filter_by_class(X_aux,Y_aux,Class)
+          X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
+          X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
 
           if N_ind == 0 and N_gr == 0:
               X_final = X_aux
