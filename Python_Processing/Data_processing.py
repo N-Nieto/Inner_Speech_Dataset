@@ -174,8 +174,7 @@ def Split_trial_in_time(X, Y, window_len, window_step, fs):
     import numpy as np
     
     
-    print("X shape entrada",X.shape)
-    print("Y shape entrada",Y.shape)
+    print("Input X shape: ",X.shape)
     N_Trials,n_chanels,t_max=X.shape
 
     
@@ -209,7 +208,7 @@ def Split_trial_in_time(X, Y, window_len, window_step, fs):
         else:
           X_final = np.vstack([X_final, X_t])
 
-
+    print("Output X shape: ",X_final.shape)
     return X_final, Y_final
 
     
