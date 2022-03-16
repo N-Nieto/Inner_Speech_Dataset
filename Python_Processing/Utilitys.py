@@ -97,3 +97,35 @@ def unify_names(Cond, Class):
         Class = "Left"
         
     return Cond, Class
+
+def map_condition(cnd):
+    if not cnd:
+    raise Exception("Condition is empty!")
+
+    if cnd.upper() == "A" or cnd.upper() == "ALL":
+        return "ALL"
+    if cnd.upper() == "P" or cnd.upper() == "PRON" or cnd.upper() == "PRONOUNCED":
+        return "PRONOUNCED"
+    if cnd.upper() == "I" or cnd.upper() == "IN" or cnd.upper() == "INNER":
+        return "INNER"
+    if cnd.upper() == "V" or cnd.upper() == "VIS" or cnd.upper() == "VISUALIZED":
+        return "VISUALIZED"
+
+    raise Exception("Wrong name of condition!")
+
+def map_class(cls):
+    if not cls:
+        raise Exception("Class is empty!")
+
+    if cls.upper() == "ALL" or cls.upper() == "TODOS":
+        return "ALL"
+    if cls.upper() == "U" or cls.upper() == "UP" or cls.upper() == "AR" or cls.upper() == "ARRIBA":
+        return "UP"
+    if cls.upper() == "D" or cls.upper() == "DOWN" or cls.upper() == "AB" or cls.upper() == "ABAJO":
+        return "DOWN"
+    if cls.upper() == "L" or cls.upper() == "LEFT" or cls.upper() == "I" or cls.upper() == "IZQ" or cls.upper() == "IZQUIERDA":
+        return "LEFT"
+    if cls.upper() == "R" or cls.upper() == "RIGHT" or cls.upper() == "D" or cls.upper() == "DER" or cls.upper() == "DERECHA":
+        return "RIGHT"
+
+    raise Exception("Wrong name of class!")    
