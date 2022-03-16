@@ -59,51 +59,63 @@ def Select_time_window(X,t_start=1, t_end=2.5, fs=256):
     return X
 
 # In[]
-def Filter_by_condition(X, Y, Condition):
+def Filter_by_condition(X, Y, condition):
+    if not condition:
+        raise Exception("You have to select the conditions!")
 
-    if Condition == 'All' or Condition == 'all':
-        X = X
-        Y = Y
+    if condition.upper() == "ALL":
+        return X, Y
     else:
-        
-        if Condition == "Pron" or Condition == "pron" or Condition == "Pronounced" :
+        X_r = []
+        Y_r = []
+        if condition.upper() == "PRON" or condition.upper() == "PRONOUNCED":
             p = 0
-        elif Condition == "In" or Condition == "inner" or Condition == "Inner" :
+        elif condition.upper() == "IN" or condition.upper() == "INNER":
             p = 1
-        elif Condition == "Vis" or Condition == "vis" or Condition == "Visualized":
+        elif condition.upper() == "VIS" or condition.upper() == "VISUALIZED":
             p = 2
-            
-        X=X[Y[:,2]==p]
-        Y=Y[Y[:,2]==p]   
-        
-    return X , Y
+        else:
+          raise Exception("The condition " + condition + " doesn't exist!")
+
+        X_r = X[Y[:,2] == p]
+        Y_r = Y[Y[:,2] == p]
+
+    return X_r, Y_r
 
 # In[]
 
-def Transform_for_classificator (X,Y,Classes,Conditions):
+def Transform_for_classificator (X, Y, Classes, Conditions):
     import numpy as np
-    
-    N_grups_cl = len(Conditions[:])
-    N_grups_cond = len(Classes[:])
-  
-    if N_grups_cl != N_grups_cond:
-      raise Exception("Incorrect number of conditions or classses")
-      
-    for N_gr in range(N_grups_cl):
 
-      N_ind_cond = len(Conditions[N_gr])
-      N_ind_clas = len(Classes[N_gr])
+    N_grups_cnd = len(Conditions[:])
+    N_grups_cls = len(Classes[:])
 
-      if N_ind_cond != N_ind_clas:
+    if(N_grups_cnd < 1 or N_grups_cls <1):
+        raise Exception("You have to select classes and conditions")
+
+    if N_grups_cnd != N_grups_cls:
+        raise Exception("Incorrect number of conditions or classses")
+
+    for N_gr in range(N_grups_cnd):
+
+        N_ind_cond = len(Conditions[N_gr])
+        N_ind_clas = len(Classes[N_gr])
+
+        if(N_ind_cond < 1 or N_ind_clas <1):
+        raise Exception("You have to select classes for each conditions")
+
+        if N_ind_cond != N_ind_clas:
           raise Exception("Incorrect number of conditions or classses")
 
-      for N_ind in range(N_ind_clas): 
+        for N_ind in range(N_ind_clas): 
 
           Cond = Conditions[N_gr][N_ind]
           Class = Classes[N_gr][N_ind]
-
-          X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
-          X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
+          try:
+            X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
+            X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
+          except Exception as ex:
+            raise
 
           if N_ind == 0 and N_gr == 0:
               X_final = X_aux
@@ -111,7 +123,6 @@ def Transform_for_classificator (X,Y,Classes,Conditions):
           else:
               X_final = np.vstack([X_final, X_aux])
               Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
-
 
     return X_final, Y_final
 
@@ -143,30 +154,30 @@ def Average_in_frec(power, frec, bands):
     return power_bands
         
 # In[]
-def Filter_by_class (X,Y,Class):
-    
-    if Class == 'All' or Class == 'all':
-        X_data = X
-        Y_data = Y
-        
-    else: 
+def Filter_by_class (X, Y, class_condition):
+    if not class_condition:
+        raise Exception("You have to select the classes for each condition!")
 
-        if Class == "up" or Class == "Up" or Class =="Arriba " or Class ==" arriba":
-            cl = 0
-        elif Class == "down" or Class == "Down" or Class == "Abajo" or Class == "abajo":
-            cl = 1
-        elif Class == "right" or Class == "Right" or Class == "Derecha" or Class == "derecha":
-            cl = 2
-        elif Class == "left" or Class == "Left" or Class == "Izquierda" or Class == "izquierda":
-            cl = 3
+    if class_condition.upper() == "ALL":
+        return X, Y
+    else:
+        X_r = []
+        Y_r = []
+        if class_condition.upper() == "UP" or class_condition.upper() == "ARRIBA":
+          p = 0
+        elif class_condition.upper() == "DOWN" or class_condition.upper() == "ABAJO":
+          p = 1
+        elif class_condition.upper() == "RIGHT" or class_condition.upper() == "DERECHA":
+          p = 2
+        elif class_condition.upper() == "LEFT" or class_condition.upper() == "IZQUIERDA":
+          p = 3
         else:
-            print("Invalid class")
-                
-        # Apilate the selected data
-        X_data = X[Y[:,1]==cl]        
-        Y_data = Y[Y[:,1]==cl]   
-            
-    return X_data , Y_data
+          raise Exception("The class " + class_condition + " doesn't exist!")
+
+        X_r = X[Y[:,1] == p]
+        Y_r = Y[Y[:,1] == p]
+
+    return X_r , Y_r
 
 
 def Split_trial_in_time(X, Y, window_len, window_step, fs):
