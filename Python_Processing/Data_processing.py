@@ -102,27 +102,27 @@ def Transform_for_classificator (X, Y, Classes, Conditions):
         N_ind_clas = len(Classes[N_gr])
 
         if(N_ind_cond < 1 or N_ind_clas <1):
-        raise Exception("You have to select classes for each conditions")
+            raise Exception("You have to select classes for each conditions")
 
         if N_ind_cond != N_ind_clas:
-          raise Exception("Incorrect number of conditions or classses")
+            raise Exception("Incorrect number of conditions or classses")
 
         for N_ind in range(N_ind_clas): 
 
-          Cond = Conditions[N_gr][N_ind]
-          Class = Classes[N_gr][N_ind]
-          try:
-            X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
-            X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
-          except Exception as ex:
-            raise ex
+            Cond = Conditions[N_gr][N_ind]
+            Class = Classes[N_gr][N_ind]
+            try:
+                X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
+                X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
+            except Exception as ex:
+                raise ex
 
-          if N_ind == 0 and N_gr == 0:
-              X_final = X_aux
-              Y_final = N_gr*(np.ones(len(Y_aux)))
-          else:
-              X_final = np.vstack([X_final, X_aux])
-              Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
+            if N_ind == 0 and N_gr == 0:
+                X_final = X_aux
+                Y_final = N_gr*(np.ones(len(Y_aux)))
+            else:
+                X_final = np.vstack([X_final, X_aux])
+                Y_final = np.hstack([Y_final, N_gr*(np.ones(len(Y_aux)))])
 
     return X_final, Y_final
 
