@@ -115,7 +115,7 @@ def Transform_for_classificator (X, Y, Classes, Conditions):
             X_aux , Y_aux = Filter_by_condition(X,Y,Cond)
             X_aux , Y_aux =  Filter_by_class(X_aux,Y_aux,Class)
           except Exception as ex:
-            raise
+            raise ex
 
           if N_ind == 0 and N_gr == 0:
               X_final = X_aux
