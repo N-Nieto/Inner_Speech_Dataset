@@ -100,7 +100,7 @@ def unify_names(Cond, Class):
 
 def map_condition(cnd):
     if not cnd:
-    raise Exception("Condition is empty!")
+        raise Exception("Condition is empty!")
 
     if cnd.upper() == "A" or cnd.upper() == "ALL":
         return "ALL"
