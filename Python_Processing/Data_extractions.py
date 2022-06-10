@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-@author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
+@author: Nieto Nicolás
+@email: nnieto@sinc.unl.edu.ar
 
 Utilitys from extract, read and load data from Inner Speech Dataset
 """
@@ -9,11 +10,10 @@ Utilitys from extract, read and load data from Inner Speech Dataset
 
 def Extract_subject_from_BDF(root_dir,N_S,N_B):
     import mne
+    from Utilitys import sub_name
+
     # name correction if N_Subj is less than 10
-    if N_S<10:
-        Num_s='sub-0'+str(N_S)
-    else:
-        Num_s='sub-'+str(N_S)
+    Num_s = sub_name(N_S)
     
     #  load data
     file_name = root_dir + '/' + Num_s + '/ses-0'+ str(N_B) +'/eeg/' +Num_s+'_ses-0'+str(N_B)+'_task-innerspeech_eeg.bdf'
@@ -28,21 +28,17 @@ def Extract_data_from_subject(root_dir,N_S,datatype):
     """
     import mne
     import numpy as np
+    from Utilitys import sub_name
 
     data=dict()
     y=dict()
     N_B_arr=[1,2,3]
+    
     for N_B in N_B_arr:
-
         # name correction if N_Subj is less than 10
-        if N_S<10:
-            Num_s='sub-0'+str(N_S)
-        else:
-            Num_s='sub-'+str(N_S)
+        Num_s = sub_name(N_S)   
             
-
-        file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_events.dat'
-        y[N_B] = np.load(file_name,allow_pickle=True)
+        y[N_B] = load_events(root_dir,N_S,N_B)
         
         if datatype=="EEG" or datatype=="eeg":
             #  load data and events
@@ -61,7 +57,7 @@ def Extract_data_from_subject(root_dir,N_S,datatype):
             data[N_B]= X._data
 
         else:
-            print("Invalid Datatype")
+            raise Exception("Invalid Datatype")
          
     X = np.vstack((data.get(1),data.get(2),data.get(3))) 
     
@@ -76,47 +72,45 @@ def Extract_block_data_from_subject(root_dir,N_S,datatype,N_B):
     Load selected block from one subject
     """
     import mne
-    import numpy as np
+    from Utilitys import sub_name
 
-    # name correction if N_Subj is less than 10
-    if N_S<10:
-        Num_s='sub-0'+str(N_S)
-    else:
-        Num_s='sub-'+str(N_S)
+    # Get subject name
+    Num_s = sub_name(N_S)
         
-        
-    file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_events.dat'
-    Y= np.load(file_name,allow_pickle=True)
+    # Get events
+    Y = load_events(root_dir,N_S,N_B)
     
-    if datatype=="EEG" or datatype=="eeg":
-        #  load data and events
-        file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_eeg-epo.fif'
-        X= mne.read_epochs(file_name,verbose='WARNING')
+    sub_dir = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)
+    if datatype == "EEG" or datatype == "eeg":
+        #  load EEG data 
+        file_name = sub_dir + '_eeg-epo.fif'
+        X = mne.read_epochs(file_name,verbose='WARNING')
 
     elif datatype=="EXG" or datatype=="exg":
-        file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_exg-epo.fif'
-        X= mne.read_epochs(file_name,verbose='WARNING')
+        #  load EXG data 
+        file_name = sub_dir + '_exg-epo.fif'
+        X = mne.read_epochs(file_name,verbose='WARNING')
     
     elif datatype=="Baseline" or datatype=="baseline":
-        file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_baseline-epo.fif'
-        X= mne.read_epochs(file_name,verbose='WARNING')
+        #  load Baseline data 
+        file_name = sub_dir + '_baseline-epo.fif'
+        X = mne.read_epochs(file_name,verbose='WARNING')
     
     else:
-        print("Invalid Datatype")
+        raise Exception("Invalid Datatype")
      
     return X, Y
 
 def Extract_report(root_dir,N_B,N_S):
-    
     import pickle
-    # name correction if N_Subj is less than 10
-    if N_S < 10:
-        Num_s = 'sub-0'+str(N_S)
-    else:
-        Num_s = 'sub-'+str(N_S)
+    from Utilitys import sub_name
+
+    # Get subject name
+    Num_s = sub_name(N_S)
         
     # Save report
-    file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_report.pkl'
+    sub_dir = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)
+    file_name = sub_dir + '_report.pkl'
     
     with open(file_name, 'rb') as input:
         report = pickle.load(input)
@@ -146,7 +140,8 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
     import mne
     import numpy as np
     import gc
-        
+    from Utilitys import sub_name
+
     N_B_arr = [1,2,3]
     tmp_list_X = []
     tmp_list_Y = []
@@ -158,11 +153,7 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
         print("Subject ", N_S)
         for N_B in N_B_arr:
     
-            # name correction if N_Subj is less than 10
-            if N_S<10:
-                Num_s='sub-0'+str(N_S)
-            else:
-                Num_s='sub-'+str(N_S)
+            Num_s = sub_name(N_S)
 
             base_file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B) 
             events_file_name = base_file_name+'_events.dat'
@@ -201,7 +192,7 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
                 tmp_list_X.append(data_tmp_X)
     
             else:
-                print("Invalid Datatype")
+                raise Exception("Invalid Datatype")
                 return None, None
         
         S += 1
@@ -209,7 +200,6 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
     X = np.empty((sum(rows), chann, steps))
     Y = np.empty((sum(rows), columns))
     offset = 0
-    offset_Y = 0
     # put elements of list into numpy array
     for i in range(total_elem):
       print("Saving element {} into array ".format(i))
@@ -229,3 +219,18 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
     else:
       # for baseline datatypes, there's no such label (rest phase)
       return X
+  
+def load_events(root_dir,N_S,N_B):
+    import numpy as np
+    from Utilitys import sub_name
+    
+    Num_s = sub_name(N_S)
+    # Create file Name
+    file_name =root_dir+"/derivatives/"+Num_s+"/ses-0"+str(N_B)+"/"+Num_s+"_ses-0"+str(N_B)+"_events.dat"
+    # Load Events
+    events = np.load(file_name,allow_pickle=True)
+    
+    return events
+
+
+    

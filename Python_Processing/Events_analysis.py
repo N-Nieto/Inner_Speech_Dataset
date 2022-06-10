@@ -2,8 +2,10 @@
 
 """
 Created on Wed Oct 16 15:18:45 2019
+Last Update: 09/06/2022
 
-@author: Nicolás
+@author: Nieto Nicolás
+@email: nnieto@sinc.unl.edu.ar
 """
 
 
@@ -32,19 +34,19 @@ def Event_correction(N_S,N_E,events):
 
 # CHECK EVETS =========================================================
 #         WORKS ONLY IF ARE NOT 2 CONSECUTIVES TAGS MISSING
-#         TODO: Check iteratibly until no tags were missing.
 # =============================================================================
     Warnings=0
     # Warning missing code
     Warnings_code=[0]
     # Warning positions
     Warnings_pos=[0]
+    
     for i in range (len (Events_code)):
-        Events_code[i,1]=i
+        Events_code[i,1] = i
 
         # Check Tags  code = 31 32 33 34
         # Find the star mark
-        if Events_code[i,0]==42:
+        if Events_code[i,0] == 42:
             # If the next mark is the tag is OK
             if (Events_code [i+1,0]==31 or Events_code [i+1,0]==32 or Events_code [i+1,0]==33 or Events_code [i+1,0]==34):
                 # Do nothing
@@ -58,10 +60,15 @@ def Event_correction(N_S,N_E,events):
                 Warnings_code= np.append(Warnings_code, miss_tag)
                 Warnings_pos=np.append(Warnings_pos,i)
 
-        # Check start      code=42
+        # Check start and question   code=42,17
         if Events_code[i,0]==46:
             if (Events_code [i+1,0]==42 or Events_code [i+1,0]==16 or Events_code [i+1,0]==17):
                 pass
+            elif (Events_code [i+1,0]==61 or Events_code[i+1,0]==62 or Events_code[i+1,0]==63 or Events_code[i+1,0]==64):
+                print('Warning, miss Question at i = '+str(i))
+                Warnings=Warnings+1
+                Warnings_code= np.append(Warnings_code, 17)
+                Warnings_pos=np.append(Warnings_pos,i)
             else:
                 print('Warning, miss start at i = '+str(i))
                 Warnings=Warnings+1
@@ -112,12 +119,23 @@ def Event_correction(N_S,N_E,events):
         if Events_code[i,0]==45:
             if Events_code [i+1,0]==46:
                 pass
-            elif Events_code [i+1,0]==42:
+            else:
                 print('Warning, miss Rest interval at i = '+str(i))
                 Warnings=Warnings+1
                 Warnings_code= np.append(Warnings_code, 46)
                 Warnings_pos=np.append(Warnings_pos,i)
 
+
+        # Check Ans Code 65
+        if Events_code[i,0]==17:
+            if (Events_code [i+1,0]==61 or Events_code[i+1,0]==62 or Events_code[i+1,0]==63 or Events_code[i+1,0]==64):
+                pass
+            else: 
+                print('Warning, miss Answerd at i = '+str(i))
+                Warnings=Warnings+1
+                Warnings_code= np.append(Warnings_code, 61)
+                Warnings_pos=np.append(Warnings_pos,i)
+                    
 # =============================================================================
 # Correcting the events============================
 
@@ -145,17 +163,27 @@ def Event_correction(N_S,N_E,events):
                # If a 44 is missing, I was seaching after a 45 
                elif corrections[i,2]== 44:
                    corrections[i,0]=events[Warnings_pos[i],0]+2594;
+                   
                #If a 44 is missing, I was seaching after a 46 
                elif corrections[i,2]== 45:
                    corrections[i,0]=events[Warnings_pos[i],0]+1075;
+                   
                # If a 46 is missing, I was seaching after a 45 un 46 
                elif corrections[i,2]== 46:
                    corrections[i,0]=events[Warnings_pos[i],0]+1075;
+                   
+               # If a tag is missing, I was seaching after a 42
+               elif corrections[i,2]== 17:
+                   corrections[i,0]=events[Warnings_pos[i],0]+2092;
+                   
+               # If a tag is missing, I was seaching after a 42
+               elif corrections[i,2]== 61:
+                   corrections[i,0]=events[Warnings_pos[i],0]+2092;
                # If a tag is missing, I was seaching after a 42
                elif corrections[i,2]== miss_tag:
                    corrections[i,0]=events[Warnings_pos[i],0]+563;
-
-
+                   
+                   
         #Append the missing events
         Corrected_events=np.append(events,corrections,axis=0)
         # Sort the events by the time stamp
@@ -244,10 +272,20 @@ def Event_correction(N_S,N_E,events):
             if Events_code_fix[i,0]==45:
                 if Events_code_fix [i+1,0]==46:
                     pass
-                elif Events_code_fix [i+1,0]==42:
+                else:
                     print('Warning, miss Rest interval at i = '+str(i))
                     Warnings=Warnings+1
                     Warnings_code= np.append(Warnings_code, 46)
+                    Warnings_pos=np.append(Warnings_pos,i)
+                   
+            # Code 17
+            if Events_code_fix[i,0]==17:
+                if (Events_code_fix [i+1,0]==61 or Events_code_fix[i+1,0]==62 or Events_code_fix[i+1,0]==63 or Events_code_fix[i+1,0]==64):
+                    pass
+                else :
+                    print('Warning, miss Answerd at i = '+str(i))
+                    Warnings=Warnings+1
+                    Warnings_code= np.append(Warnings_code, 61)
                     Warnings_pos=np.append(Warnings_pos,i)
                     
                     
@@ -276,26 +314,52 @@ def Event_correction(N_S,N_E,events):
     if (Event_count_fix[Event_count_fix[:,0]==11,1]==1 and Event_count_fix[Event_count_fix[:,0]==12,1]==1 and Event_count_fix[Event_count_fix[:,0]==13,1]==1 and Event_count_fix[Event_count_fix[:,0]==14,1]==1):
         print('Start OK')
     else:
-        print('Warning Start')
+        raise Exception("Missing Stars")
 
     # Check if blocks are OK
     if Event_count_fix[Event_count_fix[:,0]==15,1] == Event_count_fix[Event_count_fix[:,0]==16,1] == Event_count_fix[Event_count_fix[:,0]==51,1]+1 :
         print('Blocks OK')
     else:
-        print('Warning Blocks')
+        raise Exception("Missing Blocks")
 
-    
     # Check if Tags OK
     if Event_count_fix[Event_count_fix[:,0]==31,1] == Event_count_fix[Event_count_fix[:,0]==32,1] == Event_count_fix[Event_count_fix[:,0]==33,1] == Event_count_fix[Event_count_fix[:,0]==34,1]:
         print('Tags OK')
     else:
-        print('Warning Tags')
+        raise Exception("Missing Tags")
         
     # Check if Marks OK
     if Event_count_fix[Event_count_fix[:,0]==42,1] == Event_count_fix[Event_count_fix[:,0]==44,1] == Event_count_fix[Event_count_fix[:,0]==45,1] == Event_count_fix[Event_count_fix[:,0]==46,1]:
         print('Marks OK')
     else:
-        print('Warning Maks')
+        raise Exception("Missing Marks")
+
+    # Check if Questions OK
+    if len (Event_count_fix[Event_count_fix[:,0]==61,1])==0:
+        Q_61 = 0    
+    else  :  
+        Q_61 = Event_count_fix[Event_count_fix[:,0]==61,1][0] 
+
+    if len (Event_count_fix[Event_count_fix[:,0]==62,1])==0:
+        Q_62 = 0    
+    else  :  
+        Q_62 = Event_count_fix[Event_count_fix[:,0]==62,1][0] 
+
+    if len (Event_count_fix[Event_count_fix[:,0]==63,1])==0:
+        Q_63 = 0    
+    else  :  
+        Q_63 = Event_count_fix[Event_count_fix[:,0]==63,1][0] 
+
+    if len (Event_count_fix[Event_count_fix[:,0]==64,1])==0:
+        Q_64 = 0    
+    else  :  
+        Q_64 = Event_count_fix[Event_count_fix[:,0]==64,1][0]
+    
+    
+    if Event_count_fix[Event_count_fix[:,0]==17,1][0] == (Q_61+Q_62+Q_63+Q_64 ):
+        print('Cognitive control OK')
+    else:
+        raise Exception("Missing Congnitive Control Question/Answer")
 
     return Corrected_events
 
@@ -326,13 +390,15 @@ def Cognitive_control_check(events):
            else:
                Ans_W=Ans_W+1
                
+         
     if Event_count[Event_count[:,0]==17,1] == Ans_R+Ans_W:           
         if Event_count[Event_count[:,0]==17,1] == Ans_R:
             print('All Answers are OK')
         else:
             print('Warning, '+str(Ans_W)+' of ' + str(Event_count[Event_count[:,0]==17,1]) + ' Answers are wrong')
     else:
-        print('Warning, sum of answers are wrong')
+        raise Exception("Missing Congnitive Control Question/Answer")
+
     
     return Ans_R , Ans_W 
 
@@ -412,8 +478,8 @@ def Count_events_by_condition(events):
     if (min(Pron_count)==max(Pron_count) and min(Im_count)==max(Im_count) and min(Vis_count)==max(Vis_count)):
         print("Tags are ok")
     else:
-       print("Missing or incorrect tags") 
-       
+       raise Exception("Missing or incorrect tags")
+
     return Pron_count , Im_count , Vis_count
            
 # In[]
@@ -465,7 +531,11 @@ def Delete_trigger(events):
 
  # In[]   
 def Standarized_labels(events):
-    
+    # Change the labels 
+    # 31 -> 0   "Arriba"    / "Up"
+    # 32 -> 1   "Abajo"     / "Down"
+    # 33 -> 2   "Derecha"   / "Rigth"
+    # 34 -> 3   "Izquierda" / "Left"
     events[:,1]=events[:,1]-31
     
     return events
@@ -473,11 +543,18 @@ def Standarized_labels(events):
 # In[]
 def Check_Baseline_tags(events):
     import numpy as np
-    if events[3,2]==14:
-        pass
-    else:
+    # The "raw" events should star as [65536,11,13,14,15....]
+    # The event 65536 is deleted later in the Events_Correction
+    
+    
+    
+    # The tag 14 (end of baseline) should be in the 4 row in the 3 column 
+    if events[3,2]!=14:
         #Add Baseline event
-        correction=[events[2,0]+15*1024,0,14]
+        # The baseline duration is 15 seconds, (sf=1024)
+        # Add the event 15 seconds after the start Baseline cue
+        time = events[2,0]+15*1024
+        correction=[time,0,14]
         events= np.vstack([events,correction])
         events = events[events[:,0].argsort()]
         

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-@author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
+@author: Nicolás Nieto
+@email: nnieto@sinc.unl.edu.ar
 
 Utilitys for Inner speech dataset prossesing
 """
@@ -65,7 +66,7 @@ def picks_from_channels(channels):
           picks = "all"  
     else:
         picks = []
-        print("Invalid channels name")
+        raise Exception("Invalid channels name")
         
     return picks
 
@@ -113,19 +114,29 @@ def map_condition(cnd):
 
     raise Exception("Wrong name of condition!")
 
-def map_class(cls):
-    if not cls:
+def map_class(cl):
+    if not cl:
         raise Exception("Class is empty!")
 
-    if cls.upper() == "ALL" or cls.upper() == "TODOS":
+    if cl.upper() == "ALL" or cl.upper() == "TODOS":
         return "ALL"
-    if cls.upper() == "U" or cls.upper() == "UP" or cls.upper() == "AR" or cls.upper() == "ARRIBA":
+    if cl.upper() == "U" or cl.upper() == "UP" or cl.upper() == "AR" or cl.upper() == "ARRIBA":
         return "UP"
-    if cls.upper() == "D" or cls.upper() == "DOWN" or cls.upper() == "AB" or cls.upper() == "ABAJO":
+    if cl.upper() == "D" or cl.upper() == "DOWN" or cl.upper() == "AB" or cl.upper() == "ABAJO":
         return "DOWN"
-    if cls.upper() == "L" or cls.upper() == "LEFT" or cls.upper() == "I" or cls.upper() == "IZQ" or cls.upper() == "IZQUIERDA":
+    if cl.upper() == "L" or cl.upper() == "LEFT" or cl.upper() == "I" or cl.upper() == "IZQ" or cl.upper() == "IZQUIERDA":
         return "LEFT"
-    if cls.upper() == "R" or cls.upper() == "RIGHT" or cls.upper() == "D" or cls.upper() == "DER" or cls.upper() == "DERECHA":
+    if cl.upper() == "R" or cl.upper() == "RIGHT" or cl.upper() == "D" or cl.upper() == "DER" or cl.upper() == "DERECHA":
         return "RIGHT"
 
     raise Exception("Wrong name of class!")    
+
+
+def sub_name(N_S):
+    # Standarize subjects name
+    if N_S < 10:
+        Num_s = 'sub-0'+str(N_S)
+    else:
+        Num_s = 'sub-'+str(N_S)
+        
+    return Num_s
