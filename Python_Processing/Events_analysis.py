@@ -8,10 +8,11 @@ Last Update: 09/06/2022
 @email: nnieto@sinc.unl.edu.ar
 """
 
+import mne
+import numpy as np
 
 def Event_correction(N_S,N_E,events):
-    import mne
-    import numpy as np
+
 
     # Exclude this tag from the events
     events=mne.pick_events(events, exclude=65536)
@@ -368,7 +369,6 @@ def Event_correction(N_S,N_E,events):
     
 # In[]
 def Cognitive_control_check(events):
-    import numpy as np
     # Check Answers
     Ans_R=0;
     Ans_W=0;
@@ -484,7 +484,6 @@ def Count_events_by_condition(events):
            
 # In[]
 def Add_block_tag(events, N_B):
-    import numpy as np
     # Create the tag Vector
     Stage_tag=N_B*np.ones(events.shape[0],dtype=int)
     # Stack with the event matrix
@@ -495,8 +494,7 @@ def Add_block_tag(events, N_B):
 
 # In[]
 def Add_condition_tag(events):
-    import numpy as np
-    import mne
+
     # Create the tag Vector
     Mod_tag=0
     Mod=0
@@ -523,7 +521,6 @@ def Add_condition_tag(events):
 
 # In[]
 def Delete_trigger(events):
-    import numpy as np
     
     events=np.delete(events,1,axis =1)
     
@@ -542,7 +539,6 @@ def Standarized_labels(events):
 
 # In[]
 def Check_Baseline_tags(events):
-    import numpy as np
     # The "raw" events should star as [65536,11,13,14,15....]
     # The event 65536 is deleted later in the Events_Correction
     

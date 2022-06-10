@@ -7,10 +7,12 @@
 Utilitys from extract, read and load data from Inner Speech Dataset
 """
             
-
+import mne
+import gc
+import numpy as np
+from Utilitys import sub_name , unify_names
+import pickle
 def Extract_subject_from_BDF(root_dir,N_S,N_B):
-    import mne
-    from Utilitys import sub_name
 
     # name correction if N_Subj is less than 10
     Num_s = sub_name(N_S)
@@ -26,9 +28,6 @@ def Extract_data_from_subject(root_dir,N_S,datatype):
     """
     Load all blocks for one subject and stack the results in X
     """
-    import mne
-    import numpy as np
-    from Utilitys import sub_name
 
     data=dict()
     y=dict()
@@ -71,8 +70,7 @@ def Extract_block_data_from_subject(root_dir,N_S,datatype,N_B):
     """
     Load selected block from one subject
     """
-    import mne
-    from Utilitys import sub_name
+
 
     # Get subject name
     Num_s = sub_name(N_S)
@@ -102,8 +100,7 @@ def Extract_block_data_from_subject(root_dir,N_S,datatype,N_B):
     return X, Y
 
 def Extract_report(root_dir,N_B,N_S):
-    import pickle
-    from Utilitys import sub_name
+
 
     # Get subject name
     Num_s = sub_name(N_S)
@@ -119,8 +116,7 @@ def Extract_report(root_dir,N_B,N_S):
         
 
 def Extract_TFR(TRF_dir, Cond, Class, TFR_method , TRF_type):
-    import mne
-    from Utilitys import unify_names
+
 
     # Unify names as stored
     Cond, Class = unify_names(Cond, Class)       
@@ -133,14 +129,11 @@ def Extract_TFR(TRF_dir, Cond, Class, TFR_method , TRF_type):
 
 
 
-def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
+def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
     """
     Load all blocks for a list of subject and stack the results in X
     """
-    import mne
-    import numpy as np
-    import gc
-    from Utilitys import sub_name
+
 
     N_B_arr = [1,2,3]
     tmp_list_X = []
@@ -221,8 +214,6 @@ def Extract_data_multisubject(root_dir,N_S_list, datatype='EEG'):
       return X
   
 def load_events(root_dir,N_S,N_B):
-    import numpy as np
-    from Utilitys import sub_name
     
     Num_s = sub_name(N_S)
     # Create file Name
