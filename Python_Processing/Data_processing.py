@@ -5,11 +5,13 @@
 
 Data processing
 """
+# Imports
+import scipy as sp
+import numpy as np
+
 # In[]
 def Calculate_power_windowed(signal_data, fc, window_len, window_step, t_min, t_max):
-    # imports
-    import scipy as sp
-    import numpy as np
+    
 
     # Signal crop in time
     initial_sample=round(t_min*fc)
@@ -48,7 +50,6 @@ def Calculate_power_windowed(signal_data, fc, window_len, window_step, t_min, t_
 
 # In[]
 def Select_time_window(X,t_start=1, t_end=2.5, fs=256):
-    import numpy as np
     
     t_max=X.shape[2]
     start = max(round(t_start * fs), 0)
@@ -85,7 +86,6 @@ def Filter_by_condition(X, Y, condition):
 # In[]
 
 def Transform_for_classificator (X, Y, Classes, Conditions):
-    import numpy as np
 
     N_grups_cnd = len(Conditions[:])
     N_grups_cls = len(Classes[:])
@@ -129,7 +129,6 @@ def Transform_for_classificator (X, Y, Classes, Conditions):
 
 # In[]
 def Average_in_frec(power, frec, bands):
-    import numpy as np
     
     N_bands = len(bands)
 
@@ -181,10 +180,7 @@ def Filter_by_class (X, Y, class_condition):
 
 
 def Split_trial_in_time(X, Y, window_len, window_step, fs):
-
-    import numpy as np
-    
-    
+      
     print("Input X shape: ",X.shape)
     N_Trials,n_chanels,t_max=X.shape
 
