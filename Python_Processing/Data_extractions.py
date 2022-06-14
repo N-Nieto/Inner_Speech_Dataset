@@ -10,8 +10,7 @@ Utilitys from extract, read and load data from Inner Speech Dataset
 import mne
 import gc
 import numpy as np
-import Utilitys
-from Utilitys import sub_name , unify_names
+from Inner_Speech_Dataset.Python_Processing.Utilitys import sub_name , unify_names
 import pickle
 def Extract_subject_from_BDF(root_dir,N_S,N_B):
 
