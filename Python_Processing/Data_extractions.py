@@ -32,6 +32,7 @@ def Extract_data_from_subject(root_dir,N_S,datatype):
     data=dict()
     y=dict()
     N_B_arr=[1,2,3]
+    datatype=datatype.lower()
     
     for N_B in N_B_arr:
         # name correction if N_Subj is less than 10
@@ -39,18 +40,18 @@ def Extract_data_from_subject(root_dir,N_S,datatype):
             
         y[N_B] = load_events(root_dir,N_S,N_B)
         
-        if datatype=="EEG" or datatype=="eeg":
+        if datatype=="eeg":
             #  load data and events
             file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_eeg-epo.fif'
             X= mne.read_epochs(file_name,verbose='WARNING')
             data[N_B]= X._data
             
-        elif datatype=="EXG" or datatype=="exg":
+        elif datatype=="exg":
             file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_exg-epo.fif'
             X= mne.read_epochs(file_name,verbose='WARNING')
             data[N_B]= X._data
         
-        elif datatype=="Baseline" or datatype=="baseline":
+        elif datatype=="baseline":
             file_name = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)+'_baseline-epo.fif'
             X= mne.read_epochs(file_name,verbose='WARNING')
             data[N_B]= X._data
@@ -79,17 +80,17 @@ def Extract_block_data_from_subject(root_dir,N_S,datatype,N_B):
     Y = load_events(root_dir,N_S,N_B)
     
     sub_dir = root_dir + '/derivatives/' + Num_s + '/ses-0'+ str(N_B) + '/' +Num_s+'_ses-0'+str(N_B)
-    if datatype == "EEG" or datatype == "eeg":
+    if datatype == "eeg":
         #  load EEG data 
         file_name = sub_dir + '_eeg-epo.fif'
         X = mne.read_epochs(file_name,verbose='WARNING')
 
-    elif datatype=="EXG" or datatype=="exg":
+    elif datatype=="exg":
         #  load EXG data 
         file_name = sub_dir + '_exg-epo.fif'
         X = mne.read_epochs(file_name,verbose='WARNING')
     
-    elif datatype=="Baseline" or datatype=="baseline":
+    elif datatype=="baseline":
         #  load Baseline data 
         file_name = sub_dir + '_baseline-epo.fif'
         X = mne.read_epochs(file_name,verbose='WARNING')
@@ -141,6 +142,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
     rows = []
     total_elem = len(N_S_list)*3 # assume 3 sessions per subject
     S = 0
+    datatype=datatype.lower()
     for N_S in N_S_list:
         print("Iteration ", S)
         print("Subject ", N_S)
@@ -153,7 +155,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
             data_tmp_Y = np.load(events_file_name,allow_pickle=True)
             tmp_list_Y.append(data_tmp_Y)
             print("Inner iteration " , N_B)
-            if datatype=="EEG" or datatype=="eeg":
+            if datatype=="eeg":
                 # load data and events
                 eeg_file_name = base_file_name+'_eeg-epo.fif'
                 data_tmp_X = mne.read_epochs(eeg_file_name,verbose='WARNING')._data
@@ -164,7 +166,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
                   columns=data_tmp_Y.shape[1]
                 tmp_list_X.append(data_tmp_X)
 
-            elif datatype=="EXG" or datatype=="exg":
+            elif datatype=="exg":
                 exg_file_name = base_file_name+'_exg-epo.fif'
                 data_tmp_X = mne.read_epochs(exg_file_name,verbose='WARNING')._data
                 rows.append(data_tmp_X.shape[0])
@@ -174,7 +176,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
                   columns=data_tmp_Y.shape[1]
                 tmp_list_X.append(data_tmp_X)
             
-            elif datatype=="Baseline" or datatype=="baseline":
+            elif datatype=="baseline":
                 baseline_file_name = base_file_name+'_baseline-epo.fif'
                 data_tmp_X = mne.read_epochs(baseline_file_name,verbose='WARNING')._data
                 rows.append(data_tmp_X.shape[0])
@@ -197,7 +199,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
     for i in range(total_elem):
       print("Saving element {} into array ".format(i))
       X[offset:offset+rows[i],:,:] = tmp_list_X[0]
-      if datatype=="EEG" or datatype=="eeg" or datatype=="EXG" or datatype=="exg":
+      if datatype=="eeg" or datatype=="exg":
         Y[offset:offset+rows[i],:] = tmp_list_Y[0] # only build Y for the datatypes that uses it
       offset+=rows[i]
       del tmp_list_X[0]
@@ -206,7 +208,7 @@ def Extract_data_multisubject(root_dir, N_S_list, datatype='EEG'):
     print("X shape", X.shape)
     print("Y shape", Y.shape)
 
-    if datatype=="EEG" or datatype=="eeg" or datatype=="EXG" or datatype=="exg":
+    if datatype=="eeg" or datatype=="exg":
       # for eeg and exg types, there is a predefined label that is returned
       return X,Y
     else:
