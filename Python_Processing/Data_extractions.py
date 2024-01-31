@@ -13,7 +13,7 @@ import os
 import numpy as np
 from Inner_Speech_Dataset.Python_Processing.Utilitys import sub_name, unify_names       # noqa
 import pickle
-from mne.io.base import Raw
+from mne.io import Raw
 
 
 def extract_subject_from_bdf(root_dir: str, n_s:
