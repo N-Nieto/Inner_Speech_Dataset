@@ -12,7 +12,7 @@ import mne
 import numpy as np
 
 
-def Event_correction(N_S, N_E, events):
+def Event_correction(events):
 
     # Exclude this tag from the events
     events = mne.pick_events(events, exclude=65536)

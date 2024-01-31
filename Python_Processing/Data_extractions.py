@@ -165,7 +165,7 @@ def extract_report(root_dir: str, n_b: int, n_s: int):
 
 
 def extract_tfr(trf_dir: str, cond: str, class_label: str,
-                tfr_method: str, trf_type: str) -> mne.time_frequency.tfr.TFR:
+                tfr_method: str, trf_type: str) -> mne.time_frequency:
     """
     Extract Time-Frequency Representation (TFR) data.
 

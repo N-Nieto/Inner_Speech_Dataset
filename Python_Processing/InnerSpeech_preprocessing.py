@@ -155,7 +155,7 @@ for N_S in N_Subj_arr:
         events = check_baseline_tags(events)
 
         # Check and Correct event
-        events = Event_correction(N_S=N_S, N_E=N_B, events=events)
+        events = Event_correction(events=events)
 
         # replace the raw events with the new corrected events
         rawdata.event = events
