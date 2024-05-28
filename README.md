@@ -1,17 +1,17 @@
 # Inner Speech Dataset
 
-# Important! on 30 July 2021 several corrupted files were fixed in the data repository. On 25 Novembrer 2021, EEG data for participants 9 and 10 were also fixed in the repository.
+# Important! On 30 July 2021, several corrupted files were fixed in the data repository. On 25 November 2021, EEG data for participants 9 and 10 were also fixed in the repository.
 
-In the following repository all codes for reproduce and use the Inner speech Dataset are presented.
+In the following repository, all codes for reproducing and using the Inner speech Dataset are presented.
 
-The dataset is publicy available at https://openneuro.org/datasets/ds003626
+The dataset is publicly available at https://openneuro.org/datasets/ds003626
 
 The publication is available at https://www.nature.com/articles/s41597-022-01147-2
 
 
 ## Stimulation Protocol
 
-The stimulation protocol was used for capturing the data, and was developed in Matlab using Psychtoolbox.
+The stimulation protocol was used for capturing the data and was developed in Matlab using Psychtoolbox.
 
 The script `Stimulation_protocol.m` is the main script and uses the other auxiliary functions.
 
@@ -25,11 +25,11 @@ Create an environment with all the necessary libraries for running all the scrip
 
 `conda env create -f environment.yml`
 
-Using the `Inner_speech_processing.py` script, you can easily make your own processing, changing the variables at the top of the script.
+Using the `Inner_speech_processing.py` script, you can easily make your processing, by changing the variables at the top of the script.
 
-The `TFR_representation.py`  generates the Time Frequency Representations used addressing the same processing followed in the paper.
+The `TFR_representation.py`  generates the Time-Frequency Representations used addressing the same processing followed in the paper.
 
-By means of the `Plot_TFR_Topomap.py` the same images presented in the paper can be addressed.
+Using the `Plot_TFR_Topomap.py` the same images presented in the paper can be addressed.
 
 
 
@@ -48,4 +48,14 @@ Please cite this work.
   publisher={Nature Publishing Group}
 }
 
+```
+```bibtex
+@article{nieto2021inner,
+  title={Inner Speech},
+  author={Nieto, N and Peterson, V and Rufiner, HL and Kamienkowski, JE and Spies, R},
+  journal={OpenNeuro},
+  volume={29},
+  pages={227--236},
+  year={2021}
+}
 ```
