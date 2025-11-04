@@ -4,8 +4,9 @@
 @author: Nicolás Nieto
 @email: nnieto@sinc.unl.edu.ar
 
-Utilitys for Inner speech dataset prossesing
+Utilitys for Inner speech dataset processing
 """
+
 import os
 
 
@@ -63,7 +64,7 @@ def picks_from_channels(channels):
     return picks
 
 
-def unify_names(Cond: str, Class: str) -> tuple:
+def unify_names(Cond: str, Class: str) -> tuple[str, str]:
     """
     Unify different representations of conditions and classes
     to a standard set of names.
@@ -77,24 +78,26 @@ def unify_names(Cond: str, Class: str) -> tuple:
     """
 
     # Unify condition names
-    if Cond.lower() == "inner" or Cond.lower() == "in":
-        Cond = "Inner"
-    elif Cond.lower() == "vis" or Cond.lower() == "visualized":
-        Cond = "Vis"
-    elif Cond.lower() == "pron" or Cond.lower() == "pronounced":
-        Cond = "Pron"
+    cond = Cond.lower()
+    if cond in ("inner", "in"):
+        Cond = "inner"
+    elif cond in ("vis", "visualized", "visualizado"):
+        Cond = "vis"
+    elif cond in ("pron", "pronounced", "pronunciado"):
+        Cond = "pron"
 
     # Unify class names
-    if Class.lower() == "all" or Class.lower() == "todo":
-        Class = "All"
-    elif Class.lower() == "up" or Class.lower() == "arriba":
-        Class = "Up"
-    elif Class.lower() == "down" or Class.lower() == "abajo":
-        Class = "Down"
-    elif Class.lower() == "right" or Class.lower() == "derecha":
-        Class = "Right"
-    elif Class.lower() == "left" or Class.lower() == "izquierda":
-        Class = "Left"
+    cl = Class.lower()
+    if cl in ("all", "todo"):
+        Class = "all"
+    elif cl in ("up", "arriba"):
+        Class = "up"
+    elif cl in ("down", "abajo"):
+        Class = "down"
+    elif cl in ("right", "derecha"):
+        Class = "right"
+    elif cl in ("left", "izquierda"):
+        Class = "left"
 
     return Cond, Class
 
@@ -113,16 +116,17 @@ def map_condition(cnd: str) -> str:
     if not cnd:
         raise Exception("Condition is empty!")
 
-    if cnd.upper() in ["A", "ALL"]:
-        return "ALL"
-    if cnd.upper() in ["P", "PRON", "PRONOUNCED"]:
-        return "PRONOUNCED"
-    if cnd.upper() in ["I", "IN", "INNER"]:
-        return "INNER"
-    if cnd.upper() in ["V", "VIS", "VISUALIZED"]:
-        return "VISUALIZED"
-
-    raise Exception("Wrong name of condition!")
+    elif cnd.lower() in ["a", "all", "todos"]:
+        Cond = "all"
+    elif cnd.lower() in ["p", "pron", "pronounced", "pronunciado"]:
+        Cond = "pronounced"
+    elif cnd.lower() in ["i", "in", "inner", "interno"]:
+        Cond = "inner"
+    elif cnd.lower() in ["v", "vis", "visualized", "visualizado"]:
+        Cond = "visualized"
+    else:
+        raise Exception("Wrong name of condition!")
+    return Cond
 
 
 def map_class(cl: str) -> str:
@@ -138,18 +142,20 @@ def map_class(cl: str) -> str:
     if not cl:
         raise Exception("Class is empty!")
 
-    if cl.upper() in ["ALL", "TODOS"]:
-        return "ALL"
-    if cl.upper() in ["U", "UP", "AR", "ARRIBA"]:
-        return "UP"
-    if cl.upper() in ["D", "DOWN", "AB", "ABAJO"]:
-        return "DOWN"
-    if cl.upper() in ["L", "LEFT", "I", "IZQ", "IZQUIERDA"]:
-        return "LEFT"
-    if cl.upper() in ["R", "RIGHT", "D", "DER", "DERECHA"]:
-        return "RIGHT"
+    if cl.lower() in ["a", "all", "todos"]:
+        Class = "all"
+    elif cl.lower() in ["u", "up", "ar", "arriba"]:
+        Class = "up"
+    elif cl.lower() in ["d", "down", "ab", "abajo"]:
+        Class = "down"
+    elif cl.lower() in ["l", "left", "i", "izq", "izquierda"]:
+        Class = "left"
+    elif cl.lower() in ["r", "right", "d", "der", "derecha"]:
+        Class = "right"
+    else:
+        raise Exception("Wrong name of class!")
 
-    raise Exception("Wrong name of class!")
+    return Class
 
 
 def sub_name(N_S: int) -> str:
@@ -163,8 +169,8 @@ def sub_name(N_S: int) -> str:
     - str: The standardized subject name.
     """
     if N_S < 10:
-        Num_s = 'sub-0' + str(N_S)
+        Num_s = "sub-0" + str(N_S)
     else:
-        Num_s = 'sub-' + str(N_S)
+        Num_s = "sub-" + str(N_S)
 
     return Num_s

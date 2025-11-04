@@ -5,15 +5,20 @@
 
 Data processing
 """
+
 # Imports
 import numpy as np
 from typing import Tuple
 
 
-def calculate_power_windowed(signal_data: np.ndarray, fc: int,
-                             window_len: float, window_step: float,
-                             t_min: float, t_max: float
-                             ) -> Tuple[np.ndarray, np.ndarray]:
+def calculate_power_windowed(
+    signal_data: np.ndarray,
+    fc: int,
+    window_len: float,
+    window_step: float,
+    t_min: float,
+    t_max: float,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate power in a windowed manner for a given signal.
 
@@ -64,8 +69,9 @@ def calculate_power_windowed(signal_data: np.ndarray, fc: int,
     return m_power, std_power
 
 
-def select_time_window(X: np.ndarray, t_start: float = 1,
-                       t_end: float = 2.5, fs: int = 256) -> np.ndarray:
+def select_time_window(
+    X: np.ndarray, t_start: float = 1, t_end: float = 2.5, fs: int = 256
+) -> np.ndarray:
     """
     Select a time window from the input data.
 
@@ -122,8 +128,9 @@ def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
     return X_r, Y_r
 
 
-def transform_for_classificator(X: np.ndarray, Y: np.ndarray,
-                                classes: list, conditions: list) -> tuple:
+def transform_for_classificator(
+    X: np.ndarray, Y: np.ndarray, classes: list, conditions: list
+) -> tuple:
     """
     Transform data for a classifier based on specified classes and conditions.
 
@@ -176,8 +183,9 @@ def transform_for_classificator(X: np.ndarray, Y: np.ndarray,
 
 
 # In[]
-def average_in_frequency(power: np.ndarray, frequency: np.ndarray,
-                         bands: list) -> np.ndarray:
+def average_in_frequency(
+    power: np.ndarray, frequency: np.ndarray, bands: list
+) -> np.ndarray:
     """
     Calculate the average power within specified frequency bands.
 
@@ -199,8 +207,9 @@ def average_in_frequency(power: np.ndarray, frequency: np.ndarray,
         pow_select = power[:, index, :]
 
         power_band = np.average(pow_select, axis=1)
-        power_band = np.reshape(power_band,
-                                (power_band.shape[0], 1, power_band.shape[1]))
+        power_band = np.reshape(
+            power_band, (power_band.shape[0], 1, power_band.shape[1])
+        )
 
         if n_band == 0:
             power_bands = power_band
@@ -210,8 +219,7 @@ def average_in_frequency(power: np.ndarray, frequency: np.ndarray,
     return power_bands
 
 
-def filter_by_class(X: np.ndarray, Y: np.ndarray,
-                    class_condition: str) -> tuple:
+def filter_by_class(X: np.ndarray, Y: np.ndarray, class_condition: str) -> tuple:
     """
     Filter data based on a specified class condition.
 
@@ -248,8 +256,13 @@ def filter_by_class(X: np.ndarray, Y: np.ndarray,
     return X_r, Y_r
 
 
-def split_trial_in_time(X: np.ndarray, Y: np.ndarray, window_len: float,
-                        window_step: float, fs: int) -> tuple:
+def split_trial_in_time(
+    X: np.ndarray[np.float64, np.dtype[np.float64]],
+    Y: np.ndarray[np.int64, np.dtype[np.int64]],
+    window_len: float,
+    window_step: float,
+    fs: int,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Split trials in time based on specified window parameters.
 
@@ -264,34 +277,30 @@ def split_trial_in_time(X: np.ndarray, Y: np.ndarray, window_len: float,
     - tuple: A tuple containing the split X and Y arrays.
     """
     print("Input X shape:", X.shape)
-    n_trials, _, t_max = X.shape
+    n_trials, n_channels, t_max = X.shape
 
     # Window parameters
-    fc_window_len = round(fs * window_len)
-
-    # Split sections
-    split_section = int(t_max // fc_window_len)
-
-    # If there is a remainder, just drop it
-    remainder = t_max % split_section
-
-    if remainder != 0:
-        X = X[:, :, :-remainder]
+    samples_per_window = round(fs * window_len)
+    samples_per_step = round(fs * window_step)
+    n_windows = ((t_max - samples_per_window) // samples_per_step) + 1
 
     # Initializations
-    X_final = []
-    # Set labels
-    Y_final = np.repeat(Y, split_section, axis=0)
+    x_windows = []
+    y_windows = []
 
     # Main loop
     for n_tr in range(n_trials):
-        x_t = X[n_tr, :, :]
-        x_t = np.split(x_t, split_section, axis=1)
-        x_t = np.array(x_t)
-        if len(X_final) == 0:
-            X_final = x_t
-        else:
-            X_final = np.vstack([X_final, x_t])
+        trial_data = X[n_tr]
+        for w in range(n_windows):
+            start_idx = w * samples_per_step
+            end_idx = start_idx + samples_per_window
+            if end_idx <= t_max:
+                window = trial_data[:, start_idx:end_idx]
+                x_windows.append(window)
+                y_windows.append(Y[n_tr])
+
+    X_final = np.array(x_windows)
+    Y_final = np.array(y_windows)
 
     print("Output X shape:", X_final.shape)
     return X_final, Y_final
