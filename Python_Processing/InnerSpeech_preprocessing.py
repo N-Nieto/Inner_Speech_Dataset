@@ -67,7 +67,7 @@ DS_rate = 4
 
 # #################### ICA
 # If False, ICA is not applyed
-ICA_bool = True
+ICA_bool = False
 ICA_Components = None
 ica_random_state = 23
 ica_method = "infomax"
@@ -364,7 +364,7 @@ for N_S in N_Subj_arr:
         events = standardize_labels(events)
 
         # Save events
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_events.csv")
+        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_events.dat")
         events.to_csv(file_name)
 
 if 3 in N_Subj_arr:
