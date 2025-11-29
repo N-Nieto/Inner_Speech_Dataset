@@ -173,7 +173,7 @@ def transform_for_classificator(
                 raise ex
 
             if n_ind == 0 and n_group == 0:
-                X_final = X_aux
+                X_final = X_aux.copy()
                 Y_final = n_group * np.ones(len(Y_aux))
             else:
                 X_final = np.vstack([X_final, X_aux])

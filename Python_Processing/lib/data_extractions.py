@@ -303,10 +303,10 @@ def load_events(root_dir: Path, n_s: int, n_b: int):
     # Create file name
     file_name = os.path.join(
         root_dir, "derivatives", num_s, f"ses-0{n_b}", f"{num_s}_ses-0{n_b}_events.dat"
-    )  # noqa
+    )
 
     # Load events
-    events = pd.read_csv(file_name)
+    events = pd.read_csv(file_name, index_col=0)
     events = events.to_numpy()
 
     return events
