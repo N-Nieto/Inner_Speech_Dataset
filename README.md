@@ -1,8 +1,8 @@
 # Inner Speech Dataset
 
-# Important! On 30 July 2021, several corrupted files were fixed in the data repository. On 25 November 2021, EEG data for participants 9 and 10 were also fixed in the repository.
+# Important! A major refactor was made the 29/11/2025 to improve the `Inner_speech_processing.py`. Other scripts were not tested again. Please report any issues that you may find.
 
-In the following repository, all codes for reproducing and using the Inner speech Dataset are presented.
+In the following repository, all codes for reproducing and using the Inner Speech Dataset are presented.
 
 The dataset is publicly available at https://openneuro.org/datasets/ds003626
 
