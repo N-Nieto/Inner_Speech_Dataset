@@ -12,10 +12,12 @@ import mne
 import numpy as np
 import matplotlib.pyplot as plt
 
-from Data_extractions import extract_block_data_from_subject
-from Data_extractions import extract_data_from_subject
-from Data_processing import filter_by_condition, filter_by_class
-from Utilitys import ensure_dir, picks_from_channels
+from lib.data_extractions import (
+    extract_block_data_from_subject,
+    extract_data_from_subject,
+)
+from lib.data_processing import filter_by_condition, filter_by_class
+from lib.utils import ensure_dir, picks_from_channels
 
 # In[] Imports modules
 
@@ -50,8 +52,8 @@ clim = dict(eeg=[-10, 15])
 ylim = clim
 bandwidth = 2
 fontsize = 20
-plt.rcParams.update({'font.size': fontsize})
-plt.rcParams.update({'legend.framealpha': 0})
+plt.rcParams.update({"font.size": fontsize})
+plt.rcParams.update({"legend.framealpha": 0})
 
 # Load Data
 N_B = 1
@@ -72,7 +74,6 @@ for Classes in Classes_list:
     for Cond in Condition_list:
         count = 1
         for N_S in N_S_list:
-
             # Load full subject's data
             X, Y = extract_data_from_subject(root_dir, N_S, datatype)
 
@@ -91,8 +92,8 @@ for Classes in Classes_list:
                 Y_data = np.vstack((Y_data, Y_class))
 
         # In[]: Plotting
-        print("Ploting ERPs for Class: " + Classes + " in Condition: " + Cond )         # noqa
-        print("with the information of Subjects: " + str(N_S_list ))                    # noqa
+        print("Ploting ERPs for Class: " + Classes + " in Condition: " + Cond)  # noqa
+        print("with the information of Subjects: " + str(N_S_list))  # noqa
 
         # Put all data
         X_S._data = X_data
@@ -104,13 +105,18 @@ for Classes in Classes_list:
 
         # Plot Cues
         if plot_cues_bool:
-            plt.plot([0, 0], [-15, 15], axes=axs, color='black')
-            plt.plot([0.5, 0.5], [-15, 15], axes=axs, color='black')
-            plt.plot([3, 3], [-15, 15], axes=axs, color='black')
+            plt.plot([0, 0], [-15, 15], axes=axs, color="black")
+            plt.plot([0.5, 0.5], [-15, 15], axes=axs, color="black")
+            plt.plot([3, 3], [-15, 15], axes=axs, color="black")
 
         # Plot ERPs
-        X_averaged.plot(spatial_colors=spatial_colors, picks=picks, ylim=ylim,
-                        axes=axs, xlim=[t_start, t_end])
+        X_averaged.plot(
+            spatial_colors=spatial_colors,
+            picks=picks,
+            ylim=ylim,
+            axes=axs,
+            xlim=[t_start, t_end],
+        )
 
         title = "ERPs - Condition: " + Cond + " in Class" + Classes
         axs.set_title(title, fontsize=fontsize)
@@ -118,4 +124,15 @@ for Classes in Classes_list:
         # Save Figure
         if save_bool:
             ensure_dir(save_dir)
-            fig.savefig(save_dir + prefix + '_' + Cond + '_' + Classes + '_' + channels + '_.png', transparent=True)                # noqa
+            fig.savefig(
+                save_dir
+                + prefix
+                + "_"
+                + Cond
+                + "_"
+                + Classes
+                + "_"
+                + channels
+                + "_.png",
+                transparent=True,
+            )  # noqa

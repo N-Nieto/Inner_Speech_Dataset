@@ -12,10 +12,18 @@ import mne
 import numpy as np
 import matplotlib.pyplot as plt
 
-from Data_extractions import extract_block_data_from_subject
-from Data_extractions import extract_data_from_subject
-from Data_processing import filter_by_condition, filter_by_class
-from Utilitys import ensure_dir, picks_from_channels
+from lib.data_extractions import (
+    extract_block_data_from_subject,
+    extract_data_from_subject,
+)
+from lib.data_processing import (
+    filter_by_condition,
+    filter_by_class,
+)
+from lib.utils import (
+    ensure_dir,
+    picks_from_channels,
+)
 
 # In[] Imports modules
 
@@ -58,8 +66,8 @@ bandwidth = 1
 fontsize = 23
 
 
-plt.rcParams.update({'font.size': fontsize})
-plt.rcParams.update({'legend.framealpha': 0})
+plt.rcParams.update({"font.size": fontsize})
+plt.rcParams.update({"legend.framealpha": 0})
 # "midnightblue" - "darkred" - "darkcyan" - "darkgreen"
 colors = ["darkred", "midnightblue"]
 
@@ -82,7 +90,6 @@ for Classes in Classes_list:
     for Cond in Condition_list:
         count = 1
         for N_S in N_S_list:
-
             # Load full subject's data
             X, Y = extract_data_from_subject(root_dir, N_S, datatype)
 
@@ -109,13 +116,28 @@ for Classes in Classes_list:
         # for next color
         n_plot = n_plot + 1
 
-        fig = X_S.plot_psd(average=True, dB=True, estimate="power",
-                           bandwidth=bandwidth, color=color, picks=picks,
-                           fmin=fmin, fmax=fmax, tmin=tmin, tmax=tmax, ax=axs)
+        fig = X_S.plot_psd(
+            average=True,
+            dB=True,
+            estimate="power",
+            bandwidth=bandwidth,
+            color=color,
+            picks=picks,
+            fmin=fmin,
+            fmax=fmax,
+            tmin=tmin,
+            tmax=tmax,
+            ax=axs,
+        )
 
 # Saving
-axs.legend(["Inner Speech", "Visualized"], loc='upper right',
-           borderaxespad=0.9, fontsize=fontsize, shadow=False)
+axs.legend(
+    ["Inner Speech", "Visualized"],
+    loc="upper right",
+    borderaxespad=0.9,
+    fontsize=fontsize,
+    shadow=False,
+)
 axs.set_title(" ", fontsize=fontsize)
 axs.set_ylim(bottom=y_min, top=y_max)
 
@@ -125,5 +147,4 @@ fig.suptitle(title)
 # Save Figure
 if save_bool:
     ensure_dir(save_dir)
-    fig.savefig(save_dir + prefix + '_' + channel + '_.png',
-                transparent=True)
+    fig.savefig(save_dir + prefix + "_" + channel + "_.png", transparent=True)

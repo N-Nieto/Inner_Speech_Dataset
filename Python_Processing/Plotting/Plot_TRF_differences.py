@@ -10,16 +10,16 @@ Plot power difference between two clases or conditions.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Utilitys import ensure_dir
-from Data_extractions import extract_tfr
+from lib.utils import ensure_dir
+from lib.data_extractions import extract_tfr
 
 # In[] Imports modules
 
 root_spectrograms = "../"
-save_dir = '../'
+save_dir = "../"
 
 
-TRF_method = "Morlet"       # "Multitaper - "Morlet"
+TRF_method = "Morlet"  # "Multitaper - "Morlet"
 # Cue are present at t=0
 tmin = 1
 tmax = 3
@@ -32,7 +32,7 @@ baseline = [3, 4]
 normalized_bool = False
 
 # Plot Options
-outlines = "head"      # "head" - "skirt"
+outlines = "head"  # "head" - "skirt"
 sensors = True
 sphere = None
 
@@ -50,22 +50,34 @@ Condition_2 = "Pron"
 Class_2 = "All"
 
 # Bands
-bands = [(0.5, 4, 'Delta (0.5-4 Hz)'),
-         (4, 8, 'Theta (4-8 Hz)'),
-         (8, 12, 'Alpha (8-12 Hz)'),
-         (12, 30, 'Beta (12-30 Hz)'),
-         (30, 45, 'Low Gamma (30-45Hz)'),
-         (55, 100, 'High Gamma (55-100 Hz)')]
+bands = [
+    (0.5, 4, "Delta (0.5-4 Hz)"),
+    (4, 8, "Theta (4-8 Hz)"),
+    (8, 12, "Alpha (8-12 Hz)"),
+    (12, 30, "Beta (12-30 Hz)"),
+    (30, 45, "Low Gamma (30-45Hz)"),
+    (55, 100, "High Gamma (55-100 Hz)"),
+]
 
 # Load Data
 
 # Load Class and condition
-power_1 = extract_tfr(TRF_dir=root_spectrograms, Cond=Condition_1,
-                      Class=Class_1, TFR_method=TRF_method, TRF_type=TRF_type)
+power_1 = extract_tfr(
+    trf_dir=root_spectrograms,
+    cond=Condition_1,
+    class_label=Class_1,
+    trf_method=TRF_method,
+    trf_type=TRF_type,
+)
 
 # Load Class and Condition
-power_2 = extract_tfr(TRF_dir=root_spectrograms, Cond=Condition_2,
-                      Class=Class_2, TFR_method=TRF_method, TRF_type=TRF_type)
+power_2 = extract_tfr(
+    trf_dir=root_spectrograms,
+    cond=Condition_2,
+    class_label=Class_2,
+    trf_method=TRF_method,
+    trf_type=TRF_type,
+)
 
 
 # Create a new Power where the diference will be stored
@@ -76,21 +88,29 @@ if baseline_bool:
 
 
 if normalized_bool:
-    power_dif._data = (power_1._data - power_2._data) / np.maximum(power_1._data, power_2._data)            # noqa
+    power_dif._data = (power_1._data - power_2._data) / np.maximum(
+        power_1._data, power_2._data
+    )  # noqa
     # Plot limit per band - [min_lim, max_lim]
     vlim = [(-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1)]
 
 else:
     power_dif._data = power_1._data - power_2._data
     # Plot limit per band - [min_lim, max_lim]
-    vlim = [(-7.5e-9, 7.5e-9), (-9e-10, 9e-10), (-3e-10, 3e-10)
-            (-9e-11, 9e-11), (-1.2e-10, 1.2e-10), (-1.2e-10, 1.2e-10)]
+    vlim = [
+        (-7.5e-9, 7.5e-9),
+        (-9e-10, 9e-10),
+        (-3e-10, 3e-10),
+        (-9e-11, 9e-11),
+        (-1.2e-10, 1.2e-10),
+        (-1.2e-10, 1.2e-10),
+    ]
 
 
 # Plotting
 fontsize = 20
-plt.rcParams.update({'font.size': fontsize})
-plt.rcParams.update({'legend.framealpha': 0})
+plt.rcParams.update({"font.size": fontsize})
+plt.rcParams.update({"legend.framealpha": 0})
 
 
 for band in range(len(bands)):
@@ -99,19 +119,58 @@ for band in range(len(bands)):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
 
-    power_dif.plot_topomap(fmin=bands_loop[0], fmax=bands_loop[1], tmin=tmin,
-                           tmax=tmax, title=bands_loop[2], show=False,
-                           axes=ax, vmin=vlim_loop[0], vmax=vlim_loop[1],
-                           outlines=outlines, sensors=sensors, sphere=sphere,
-                           unit="Power difference")
+    power_dif.plot_topomap(
+        fmin=bands_loop[0],
+        fmax=bands_loop[1],
+        tmin=tmin,
+        tmax=tmax,
+        title=bands_loop[2],
+        show=False,
+        axes=ax,
+        vmin=vlim_loop[0],
+        vmax=vlim_loop[1],
+        outlines=outlines,
+        sensors=sensors,
+        sphere=sphere,
+        unit="Power difference",
+    )
 
     if save_bool:
         ensure_dir(save_dir)
 
         if baseline_bool:
-            fig.savefig(save_dir + prefix+'_'+Condition_1+'_'+Class_1+'_vs_'+Condition_2+'_'+Class_2+'_band'+str(band)+'_Baseline.png',             # noqa
-                        transparent=True, pad_inches=0.5)
+            fig.savefig(
+                save_dir
+                + prefix
+                + "_"
+                + Condition_1
+                + "_"
+                + Class_1
+                + "_vs_"
+                + Condition_2
+                + "_"
+                + Class_2
+                + "_band"
+                + str(band)
+                + "_Baseline.png",
+                transparent=True,
+                pad_inches=0.5,
+            )
 
         else:
-            fig.savefig(save_dir + prefix+'_'+Condition_1+'_'+Class_1+'_vs_'+Condition_2+'_'+Class_2+'_band'+str(band)+'_NO_Baseline.png',          # noqa
-                        transparent=True)
+            fig.savefig(
+                save_dir
+                + prefix
+                + "_"
+                + Condition_1
+                + "_"
+                + Class_1
+                + "_vs_"
+                + Condition_2
+                + "_"
+                + Class_2
+                + "_band"
+                + str(band)
+                + "_NO_Baseline.png",
+                transparent=True,
+            )
