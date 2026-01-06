@@ -16,30 +16,40 @@ from typing import Tuple, List, Dict, Optional
 
 # Constants for better readability and maintainability
 EVENT_CODES = {
-    "STARTS": [11, 12, 13, 14],
-    "BLOCKS": [21, 22, 23],
-    "TAGS": [31, 32, 33, 34],
-    "MARKS": [42, 44, 45, 46],
-    "QUESTIONS": [16, 17],
-    "ANSWERS": [61, 62, 63, 64],
+    # Protocol start (NOTE THAT IN TABLE 3 OF THE PAPER, THERE IS A TYPO AND 1 IS MENTIONED AS STARTING TAG,
+    # (INSTED OF 11), Baseline start, run start
+    "STARTS": [11, 13],
+    "ENDS": [12, 14],  # Protocol end, Baseline end, run end
+    "RUN_START": [15],  # Run start
+    "RUN_END": [16],  # Run end
+    "INTER_RUN_REST": [51],  # Inter-run rest
+    "BLOCKS": [21, 22, 23],  # Pron, Im, Vis blocks start
+    "TAGS": [31, 32, 33, 34],  # Trial tags
+    "MARKS": [42, 44, 45, 46],  # Concentration, Action, Relax, Rest intervals
+    "QUESTIONS": [17],  # Cognitive control question
+    "ANSWERS": [61, 62, 63, 64],  # Cognitive control answers
+    # Tag to be excluded from analysis (caused by trigger overflow in Biosemi systems)
     "EXCLUDE": 65536,
 }
+
+# CHECK TIMING
 TIME_OFFSETS = {
-    42: 1945,  # Start mark
-    44: 2594,  # Useful interval
+    42: 1945,  # Concentration mark
+    44: 2594,  # Action interval
     45: 1075,  # Concentration interval
     46: 1075,  # Rest interval
     17: 2092,  # Question
-    61: 2092,  # Answer
+    "ANSWERS": 2092,  # Answer
     "TAG": 563,  # For tags 31-34
 }
 
-
 EXPECTED_TRANSITIONS = {
-    42: [31, 32, 33, 34, 44],  # Start mark -> Tags or Useful interval
-    46: [42, 16, 17, 61, 62, 63, 64],  # Rest interval -> Start, Questions, or Answers
+    42: [31, 32, 33, 34],  # Concentration (Start) mark -> Tags interval
+    # (31, 32, 33, 34): 44,
+    46: [42, 16, 17],  # Rest interval -> Start new trial, end of run, Question pose
     17: [61, 62, 63, 64],  # Question -> Answers
-    44: [45, 46],  # Useful interval -> Concentration or Rest
+    # (61, 62, 63, 64): 42,  # Answers -> Start
+    44: [45],  # Useful interval -> Concentration or Rest
     45: [46],  # Concentration interval -> Rest
 }
 
@@ -71,15 +81,6 @@ def event_correction(events: pd.DataFrame) -> pd.DataFrame:
     Raises:
         ValueError: If input DataFrame doesn't have at least 3 columns
         Exception: If corrected event sequence fails sanity checks
-
-    Example:
-        >>> raw_events = pd.DataFrame({
-        ...     'time': [1000, 2000, 3000],
-        ...     'trigger': [0, 0, 0],
-        ...     'code': [42, 31, 44]
-        ... })
-        >>> corrected_events = event_correction(raw_events)
-        >>> print(f"Original: {len(raw_events)} events, Corrected: {len(corrected_events)} events")
     """
     print("Starting event correction process...")
 
@@ -148,7 +149,7 @@ def _build_event_analysis_arrays(
             - Events_code array with shape (n_events, 2) containing [code, position]
             - Event_count array with shape (n_unique_codes, 2) containing [code, count]
     """
-    codes = events_df.iloc[:, 2].astype(int).to_numpy()
+    codes = events_df["Code"].copy().astype(int).to_numpy()
 
     # Build Events_code array: [code, position]
     events_code = np.zeros((len(codes), 2), dtype=int)
@@ -167,6 +168,9 @@ def _build_event_analysis_arrays(
 def _detect_missing_tag_code(event_count: np.ndarray) -> int:
     """
     Identify which tag code (31-34) is missing based on minimum count.
+
+    Now is working only if one tag is missing.
+    TODO: Improve to handle multiple missing tags by analysisg the block structure and not the whole recording.
 
     Args:
         event_count: Event_count array with [code, count]
@@ -201,13 +205,33 @@ def _check_event_transition(
     if current_code == 42 and next_code not in EXPECTED_TRANSITIONS[42]:
         if next_code == 44:
             return _detect_missing_tag_code(event_count)
-        return 42  # Missing start mark
+        else:
+            raise Exception("Invalid transition after start mark (42)")
+
+    # Check: Tags (31-34) should be followed by 44, ALWAYS after tags a 44 should come
+    elif current_code in GROUP_TRANSITIONS["TAGS"] and next_code != 44:
+        return 44  # Missing useful interval after tag
+
+    # Check: 44 (Useful interval) should be followed by 45
+    elif current_code == 44 and next_code not in EXPECTED_TRANSITIONS[44]:
+        return 45  # Missing concentration interval
+
+    # Check: 45 (Concentration interval) should be followed by 46 (Rest interval) (ALWAYS)
+    elif current_code == 45 and next_code != 46:
+        return 46  # Missing rest interval
 
     # Check: 46 (Rest interval) should be followed by valid next events
     elif current_code == 46 and next_code not in EXPECTED_TRANSITIONS[46]:
+        # There are three possible valid next events after 46: 42 (Start), 16 (End run), or 17 (Question)
+        # If the answer is the next code, the question mark is missing
         if next_code in EVENT_CODES["ANSWERS"]:
             return 17  # Missing question before answer
-        return 42  # Missing start mark
+        elif next_code in EVENT_CODES["TAGS"]:
+            return 42  # Missing Concentration (start) mark
+        elif next_code in EVENT_CODES["INTER_RUN_REST"]:
+            return 16  # Missing end of run
+        else:
+            raise Exception("Invalid transition after rest interval (46)")
 
     # Check: Blocks (21-23) should be followed by 42 (Start mark)
     elif current_code in GROUP_TRANSITIONS["BLOCKS"] and next_code != 42:
@@ -215,22 +239,18 @@ def _check_event_transition(
 
     # Check: Answers (61-64) should be followed by 42 or 16
     elif current_code in GROUP_TRANSITIONS["ANSWERS"] and next_code not in (42, 16):
-        return 42  # Missing start after answer
-
-    # Check: Tags (31-34) should be followed by 44 or 45
-    elif current_code in GROUP_TRANSITIONS["TAGS"] and next_code not in (44, 45):
-        return 44  # Missing useful interval after tag
-
-    # Check: 44 (Useful interval) should be followed by 45 or 46
-    elif current_code == 44 and next_code not in EXPECTED_TRANSITIONS[44]:
-        return 45  # Missing concentration interval
-
-    # Check: 45 (Concentration interval) should be followed by 46 (Rest interval)
-    elif current_code == 45 and next_code != 46:
-        return 46  # Missing rest interval
+        # After anwers, either a new trial starts (42) or the block ends (16)
+        if next_code in EVENT_CODES["TAGS"]:
+            return 42  # Missing Concentration (start) mark
+        elif next_code in EVENT_CODES["INTER_RUN_REST"]:
+            return 16  # Missing end of run
+        else:
+            raise Exception("Invalid transition after answers (61-64)")
 
     # Check: 17 (Question) should be followed by Answers (61-64)
     elif current_code == 17 and next_code not in EXPECTED_TRANSITIONS[17]:
+        print("Missing answer after question")
+        print("Filling with 61")
         return 61  # Missing answer after question
 
     return None  # Valid transition
@@ -287,11 +307,13 @@ def _create_correction_event(
     Returns:
         List: New event row with calculated timestamp and missing code
     """
-    base_time = int(events_df.iloc[position, 0])
+    base_time = int(events_df.loc[position, "Time"])
 
     # Calculate correction time based on missing code type
     if missing_code in TIME_OFFSETS:
         time_offset = TIME_OFFSETS[missing_code]
+    elif missing_code in EVENT_CODES["ANSWERS"]:
+        time_offset = TIME_OFFSETS["ANSWERS"]
     else:
         time_offset = TIME_OFFSETS["TAG"]  # Default offset for tags
 
@@ -400,7 +422,7 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
         _get_event_count(event_count_fix, code) for code in EVENT_CODES["MARKS"]
     ]
     if not all(count == mark_counts[0] for count in mark_counts):
-        raise Exception("Missing or inconsistent marks")
+        raise Exception("Missing or inconsistent marks, got " + str(mark_counts))
     print("Marks OK")
 
     # Check 5: Cognitive control - questions should match answers
@@ -684,12 +706,12 @@ def check_baseline_tags(events: pd.DataFrame) -> pd.DataFrame:
         )
 
     # The tag 14 (end of baseline) should be in the 4th row in the 3rd column
-    if int(events.iloc[3, 2]) != 14:
+    if int(events.loc[3, "Code"]) != 14:
         print("Adding missing baseline end tag...")
 
         # Baseline duration is 15 seconds, sampling freq assumed 1024
         baseline_duration = 15 * 1024  # 15 seconds * 1024 Hz
-        time = int(events.iloc[2, 0]) + baseline_duration
+        time = int(events.loc[2, "Time"]) + baseline_duration
 
         # Build correction row using the same columns as the input DataFrame
         correction_data = {events.columns[0]: time, events.columns[2]: 14}

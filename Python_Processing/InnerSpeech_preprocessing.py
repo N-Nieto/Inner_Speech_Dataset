@@ -17,7 +17,6 @@ A proposed ICA processing is implemented using MNE functions
 import mne
 import pickle
 import numpy as np
-import pandas as pd
 from pathlib import Path
 
 from lib.events_analysis import (
@@ -32,6 +31,8 @@ from lib.events_analysis import (
 
 from lib.data_extractions import (
     extract_subject_from_bdf,
+    get_age_gender,
+    get_events_from_raw,
 )
 from lib.utils import ensure_dir
 from lib.AdHoc_modification import (
@@ -50,51 +51,59 @@ data_dir = project_root / "ds003626"
 # It can be changed and saved in other direction
 save_dir = data_dir / "derivatives"
 
-# Subjects and blacks
+# Subjects and blacks. Subjects range from 1 to 10 (no subject 0). Blocks range from 1 to 3, (no block 0)
 N_Subj_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 N_block_arr = [1, 2, 3]
 
+# problematic subjects (3-1, 5-1, 5-2, 6-1, 6-2, 6-3, 7-1, 7-2, 7-3, 8-1, 8-2, 9-2, 9-3, 10-1, 10-2, 10-3)
+# check the correction of 40ths tags
+# The error even happend when no warnings are detected and no correction applies
+
 # #################### Filtering
 # Cut-off frequencies
-Low_cut = 0.5
-High_cut = 100
+FILTER_BOOL = True
+LOW_CUT = 0.5
+HIGH_CUT = 100
 
 # Notch filter in 50Hz
-Notch_bool = True
+NOTCH_BOOL = True
 
 # Downsampling rate
-DS_rate = 4
+DS_RATE = 4
 
 # #################### ICA
 # If False, ICA is not applyed
-ICA_bool = False
-ICA_Components = None
-ica_random_state = 23
-ica_method = "infomax"
-max_pca_components = None
+ICA_BOOL = False
+ICA_COMPONENTS = None  # Use None to automatic selection
+ICA_METHOD = "infomax"
+MAX_PCA_COMPONENTS = None
+RANDOM_STATE = 23
 fit_params = dict(extended=True)
 
 # #################### EMG Control
-low_f = 1
-high_f = 20
+EMG_FILTER_LOW_CUT = 1
+EMG_FILTER_HIGH_CUT = 20
+
 # Slide window desing
 # Window len (time in sec)
-window_len = 0.5
+WINDOW_LEN = 0.5
 # slide window step (time in sec)
-window_step = 0.05
+WINDOW_STEP = 0.05
 
 # Threshold for EMG control
-std_times = 3
+STD_TIMES = 3  # How many times the std to set the threshold
+
+# %%
+# ------------------ Fixed variables from the adquisition process ------------------
 
 # Baseline
-t_min_baseline = 0
-t_max_baseline = 15
+T_MIN_BASELINE = 0
+T_MAX_BASELINE = 15
 
 # Trial time
-t_min = 1
-t_max = 3.5
+T_MIN = 1
+T_MAX = 3.5
 
-# In[]: Fixed Variables
 # Events ID
 # Trials tag for each class.
 # 31 = Arriba / Up
@@ -107,12 +116,12 @@ event_id = dict(Arriba=31, Abajo=32, Derecha=33, Izquierda=34)
 baseline_id = dict(Baseline=13)
 
 # Report initialization
-report = dict(Age=0, Gender=0, Recording_time=0, Ans_R=0, Ans_W=0)
+report = dict(Age=None, Gender="-", Recording_time=None, Ans_R=None, Ans_W=None)
 
 # Montage
-Adquisition_eq = "biosemi128"
+ADQUISITION_EQ = "biosemi128"
 # Get montage
-montage = mne.channels.make_standard_montage(Adquisition_eq)
+MONTAGE = mne.channels.make_standard_montage(ADQUISITION_EQ)
 
 # Extern channels
 Ref_channels = ["EXG1", "EXG2"]
@@ -126,17 +135,12 @@ Blinks_channels = ["EXG5", "EXG6"]
 # Mouth Moving detection
 Mouth_channels = ["EXG7", "EXG8"]
 
-# Demographic information
-Subject_age = [56, 50, 34, 24, 31, 29, 26, 28, 35, 31]
-
-Subject_gender = ["F", "M", "M", "F", "F", "M", "M", "F", "M", "M"]
-
-# In[] = Processing loop
+# %%
+# ------------------ Processing loop ------------------
 
 for N_S in N_Subj_arr:
     # Get Age and Gender
-    report["Age"] = Subject_age[N_S - 1]
-    report["Gender"] = Subject_gender[N_S - 1]
+    report["Age"], report["Gender"] = get_age_gender(N_S)
 
     for N_B in N_block_arr:
         print("Subject: " + str(N_S))
@@ -145,29 +149,12 @@ for N_S in N_Subj_arr:
         # Load data from BDF file
         rawdata, Num_s = extract_subject_from_bdf(data_dir, N_S, N_B)
 
-        # Referencing
-        rawdata.set_eeg_reference(ref_channels=Ref_channels)
 
-        if Notch_bool:
-            # Notch filter
-            rawdata = mne.io.Raw.notch_filter(rawdata, freqs=50)
 
-        # Filtering raw data
-        rawdata.filter(Low_cut, High_cut)
-
-        # Get events
-        # Subject 10  on Block 1 have a spureos trigger
-        if N_S == 10 and N_B == 1:
-            events = mne.find_events(
-                rawdata, initial_event=True, consecutive=True, min_duration=0.002
-            )
-            # The different load of the events delet
-            # the spureos trigger but also the Baseline finish mark
-        else:
-            events = mne.find_events(rawdata, initial_event=True, consecutive=True)
-
-        events = pd.DataFrame(events, columns=["Time", "Trigger", "Code"])
-
+        # Get raw events
+        events = get_events_from_raw(rawdata, N_S, N_B)
+        print("Checking Events")
+        # Check and Correct baseline tags
         events = check_baseline_tags(events)
 
         # Check and Correct event
@@ -180,11 +167,22 @@ for N_S in N_Subj_arr:
 
         report["Recording_time"] = int(
             np.round(rawdata.last_samp / rawdata.info["sfreq"])
-        )  # noqa
+        )
 
         # Cognitive Control
         report["Ans_R"], report["Ans_W"] = cognitive_control_check(events)
+        print("Check done")
+        # %%
+        # Referencing
+        rawdata.set_eeg_reference(ref_channels=Ref_channels)
+        if NOTCH_BOOL:
+            # Notch filter
+            rawdata = mne.io.Raw.notch_filter(rawdata, freqs=50)
 
+        if FILTER_BOOL:
+            # Filtering raw data
+            rawdata.filter(LOW_CUT, HIGH_CUT)
+        # %%
         # Save report
         file_path = save_dir / (Num_s + "/ses-0" + str(N_B))
         ensure_dir(str(file_path))
@@ -210,7 +208,7 @@ for N_S in N_Subj_arr:
             picks=picks_eog,
             preload=True,
             detrend=0,
-            decim=DS_rate,
+            decim=DS_RATE,
         )
 
         # Save EOG
@@ -236,7 +234,7 @@ for N_S in N_Subj_arr:
             picks="all",
             preload=True,
             detrend=0,
-            decim=DS_rate,
+            decim=DS_RATE,
             baseline=None,
         )
 
@@ -263,13 +261,13 @@ for N_S in N_Subj_arr:
             picks=picks_eeg,
             preload=True,
             detrend=0,
-            decim=DS_rate,
+            decim=DS_RATE,
             baseline=None,
         )
 
         # ICA Prosessing
 
-        if ICA_bool:
+        if ICA_BOOL:
             # Get a full trials including EXG channels
             picks_vir = mne.pick_types(
                 rawdata.info,
@@ -295,7 +293,7 @@ for N_S in N_Subj_arr:
                 picks=picks_vir,
                 preload=True,
                 detrend=0,
-                decim=DS_rate,
+                decim=DS_RATE,
                 baseline=None,
             )
 
@@ -304,9 +302,9 @@ for N_S in N_Subj_arr:
 
             # Creating the ICA object
             ica = mne.preprocessing.ICA(
-                n_components=ICA_Components,
-                random_state=ica_random_state,
-                method=ica_method,
+                n_components=ICA_COMPONENTS,
+                random_state=RANDOM_STATE,
+                method=ICA_METHOD,
                 fit_params=fit_params,
             )
 
@@ -376,15 +374,15 @@ EMG_control_single_th(
     root_dir=data_dir,
     N_Subj_arr=N_Subj_arr,
     N_block_arr=N_block_arr,
-    low_f=low_f,
-    high_f=high_f,
-    t_min=t_min,
-    t_max=t_max,
-    window_len=window_len,
-    window_step=window_step,
-    std_times=std_times,
-    t_min_baseline=t_min_baseline,
-    t_max_baseline=t_max_baseline,
+    low_f=EMG_FILTER_LOW_CUT,
+    high_f=EMG_FILTER_HIGH_CUT,
+    t_min=T_MIN,
+    t_max=T_MAX,
+    window_len=WINDOW_LEN,
+    window_step=WINDOW_STEP,
+    std_times=STD_TIMES,
+    t_min_baseline=T_MIN_BASELINE,
+    t_max_baseline=T_MAX_BASELINE,
 )
 
 # %%

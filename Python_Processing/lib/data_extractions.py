@@ -286,6 +286,22 @@ def extract_data_multisubject(
         return x
 
 
+def get_events_from_raw(rawdata, N_S, N_B):
+    # Subject 10  on Block 1 have a spureos trigger
+    if N_S == 10 and N_B == 1:
+        events = mne.find_events(
+            rawdata, initial_event=True, consecutive=True, min_duration=0.002
+        )
+        # The different load of the events delet
+        # the spureos trigger but also the Baseline finish mark
+    else:
+        events = mne.find_events(rawdata, initial_event=True, consecutive=True)
+
+    events = pd.DataFrame(events, columns=["Time", "Trigger", "Code"])
+
+    return events
+
+
 def load_events(root_dir: Path, n_s: int, n_b: int):
     """
     Load events data for a specific subject and block.
@@ -310,3 +326,26 @@ def load_events(root_dir: Path, n_s: int, n_b: int):
     events = events.to_numpy()
 
     return events
+
+
+def get_age_gender(N_S: int) -> tuple[int, str]:
+    """
+    Retrieve the age and gender of a subject based on their subject number.
+
+    Demographic information
+    Subject_age = [56, 50, 34, 24, 31, 29, 26, 28, 35, 31];
+    Subject_gender = ["F", "M", "M", "F", "F", "M", "M", "F", "M", "M"]
+
+    Parameters:
+    - N_S (int): The subject number.
+
+    Returns:
+    - tuple: A tuple containing the age (int) and gender (str) of the subject.
+    """
+    # Fixed demographic information
+    Subject_age = [56, 50, 34, 24, 31, 29, 26, 28, 35, 31]
+    Subject_gender = ["F", "M", "M", "F", "F", "M", "M", "F", "M", "M"]
+    # Retrieve age and gender for the corresponding subject number
+    age = Subject_age[N_S - 1]
+    gender = Subject_gender[N_S - 1]
+    return age, gender
