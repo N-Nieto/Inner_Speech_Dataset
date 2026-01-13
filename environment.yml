@@ -3,11 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8.6
+  - python=3.13.5
   - mne=0.22.0
   - pip
   - matplotlib
   - numpy
-  - spyder=4.2.1
   - pip:
      - pickle-mixin
+     - datalad
+     - tqdm
