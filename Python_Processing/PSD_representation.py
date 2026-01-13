@@ -20,8 +20,8 @@ from lib.utils import ensure_dir, unify_names
 # Processing Variables
 
 # Root where the data are stored
-root_dir = "../"
-save_dir = "../"
+root_dir = "../ds003626/"
+save_dir = "../ds003626/"
 
 # Save options
 save_bool = False

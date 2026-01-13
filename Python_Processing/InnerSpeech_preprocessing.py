@@ -3,14 +3,23 @@
 """
 @author: Nicolás Nieto
 
-We present the pipeline for processing the Inner Speech dataset,
-Convert the raw data into a structured dataset.
+We present a processing pipeline for the Inner Speech dataset that converts raw data into a
+structured BIDS-compliant dataset stored in the "derivatives" folder.
 
-A processing is proposed.
-The filter cut frequencies could be easily changed with the
-variables Low_cut and High_cut.
+Prerequisites:
+Ensure you have downloaded the dataset from OpenNeuro.
+A helper script (Raw_data_download_tutorial.py) is available to facilitate downloading the raw data.
+If you prefer not to reprocess the data, you can download the preprocessed derivatives directly using another script (Derivatives_download_tutorial.py).
 
-A proposed ICA processing is implemented using MNE functions
+Preprocessing Steps:
+    1. Event extraction and correction
+    2. EEG re-referencing
+    3. 50 Hz notch filter (Argentina power line frequency)
+    4. Bandpass filtering (low-cut and high-cut)
+    5. ICA-FIX processing using all components (computationally intensive)
+    6. Ad hoc correction for subjects who performed the tasks in another order
+    7. EMG validation using single threshold
+    8. Report generation and saving
 """
 
 # Imports modules
@@ -54,10 +63,6 @@ save_dir = data_dir / "derivatives"
 # Subjects and blacks. Subjects range from 1 to 10 (no subject 0). Blocks range from 1 to 3, (no block 0)
 N_Subj_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 N_block_arr = [1, 2, 3]
-
-# problematic subjects (3-1, 5-1, 5-2, 6-1, 6-2, 6-3, 7-1, 7-2, 7-3, 8-1, 8-2, 9-2, 9-3, 10-1, 10-2, 10-3)
-# check the correction of 40ths tags
-# The error even happend when no warnings are detected and no correction applies
 
 # #################### Filtering
 # Cut-off frequencies
@@ -148,8 +153,6 @@ for N_S in N_Subj_arr:
 
         # Load data from BDF file
         rawdata, Num_s = extract_subject_from_bdf(data_dir, N_S, N_B)
-
-
 
         # Get raw events
         events = get_events_from_raw(rawdata, N_S, N_B)

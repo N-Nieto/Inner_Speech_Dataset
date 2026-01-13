@@ -322,8 +322,7 @@ def load_events(root_dir: Path, n_s: int, n_b: int):
     )
 
     # Load events
-    events = pd.read_csv(file_name, index_col=0)
-    events = events.to_numpy()
+    events = pd.read_pickle(file_name)
 
     return events
 
