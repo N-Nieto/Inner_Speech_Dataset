@@ -8,6 +8,7 @@ from pathlib import Path
 from Python_Processing.lib.download_helper import (
     clone_inner_speech,
     get_derivatives,
+    get_raw_eeg,
 )
 
 # The script InnerSpeech_preprocessing expects the data be saved in the parent folder of the project.
@@ -38,8 +39,16 @@ data_dir = clone_inner_speech(target_dir=data_dir, verbose=False)
 #     progress=True,
 # )
 
+# Option 3: Download 1 subject of raw eeg data.
+get_raw_eeg(
+    dataset_path=data_dir,
+    subjects="01",
+    sessions="01",
+    verbose=True,
+    progress=True,
+)
 
-# Option 3: Exploration for 1 subject and one session.
+# Option 4: Exploration for 1 subject and one session.
 get_derivatives(
     dataset_path=data_dir,
     subjects="01",
@@ -48,4 +57,6 @@ get_derivatives(
     verbose=True,
     progress=False,
 )
+
+
 # %%
