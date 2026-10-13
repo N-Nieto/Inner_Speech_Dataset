@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
@@ -9,8 +7,8 @@ Plot Inter Trial Coherence
 
 import matplotlib.pyplot as plt
 
-from lib.utils import ensure_dir
 from lib.data_extractions import extract_tfr
+from lib.utils import ensure_dir
 
 # Imports modules
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
@@ -10,8 +8,8 @@ Plot power difference between two clases or conditions.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lib.utils import ensure_dir
 from lib.data_extractions import extract_tfr
+from lib.utils import ensure_dir
 
 # In[] Imports modules
 
@@ -90,7 +88,7 @@ if baseline_bool:
 if normalized_bool:
     power_dif._data = (power_1._data - power_2._data) / np.maximum(
         power_1._data, power_2._data
-    )  # noqa
+    )
     # Plot limit per band - [min_lim, max_lim]
     vlim = [(-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1)]
 

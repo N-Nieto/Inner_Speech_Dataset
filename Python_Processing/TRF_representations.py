@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto
 
@@ -9,15 +7,15 @@ Time Frecuency Representations
 
 import mne
 import numpy as np
+from mne.time_frequency import tfr_morlet, tfr_multitaper
 
-from mne.time_frequency import tfr_multitaper, tfr_morlet
 from lib.data_extractions import (
     extract_block_data_from_subject,
     extract_data_from_subject,
 )
 from lib.data_processing import (
-    filter_by_condition,
     filter_by_class,
+    filter_by_condition,
 )
 from lib.utils import ensure_dir, unify_names
 
@@ -68,7 +66,7 @@ zero_mean = True
 # Load a single subject to use the Epoched Object structure
 N_B = 1
 N_S = 1
-X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B=N_B)
+X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, n_b=N_B)
 
 # Set Montage
 Adquisition_eq = "biosemi128"
@@ -83,10 +81,10 @@ for Classes in Classes_list:
             X_s, Y = extract_data_from_subject(root_dir, N_S, datatype)
 
             # Filter by condition
-            X_cond, Y_cond = filter_by_condition(X_s, Y, Condition=Cond)
+            X_cond, Y_cond = filter_by_condition(X_s, Y, condition=Cond)
 
             # Filter by class
-            X_cond, Y_cond = filter_by_class(X_cond, Y_cond, Class=Classes)
+            X_cond, Y_cond = filter_by_class(X_cond, Y_cond, class_condition=Classes)
 
             # Stack trial for every subject
             if count == 1:
@@ -106,8 +104,8 @@ for Classes in Classes_list:
             + Classes
             + " in Condition: "
             + Cond
-        )  # noqa
-        print("with the information of Subjects: " + str(N_S_list))  # noqa
+        )
+        print("with the information of Subjects: " + str(N_S_list))
 
         # Create a subject with all trials
         X_S._data = X_data
@@ -129,7 +127,7 @@ for Classes in Classes_list:
                 ensure_dir(save_dir)
                 file_name = (
                     save_dir + TFR_method + "_" + Cond + "_" + Classes + "_power-tfr.h5"
-                )  # noqa
+                )
                 power.save(fname=file_name, overwrite=overwrite)
                 if return_itc:
                     file_name = (
@@ -140,7 +138,7 @@ for Classes in Classes_list:
                         + "_"
                         + Classes
                         + "_itc-tfr.h5"
-                    )  # noqa
+                    )
                     itc.save(fname=file_name, overwrite=overwrite)
 
         elif TFR_method == "Morlet":
@@ -161,7 +159,7 @@ for Classes in Classes_list:
                 Cond, Classes = unify_names(Cond, Class=Classes)
                 file_name = (
                     save_dir + TFR_method + "_" + Cond + "_" + Classes + "_power-tfr.h5"
-                )  # noqa
+                )
                 power.save(fname=file_name, overwrite=overwrite)
 
                 if return_itc:
@@ -174,7 +172,7 @@ for Classes in Classes_list:
                         + "_"
                         + Classes
                         + "_itc-tfr.h5"
-                    )  # noqa
+                    )
                     itc.save(fname=file_name, overwrite=overwrite)
 
         else:

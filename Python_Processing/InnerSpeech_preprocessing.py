@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
 # %%
 """
 @author: Nicolás Nieto
 
-We present a processing pipeline for the Inner Speech dataset that converts raw data into a
-structured BIDS-compliant dataset stored in the "derivatives" folder.
+We present a processing pipeline for the Inner Speech dataset that converts raw data
+into a structured BIDS-compliant dataset stored in the "derivatives" folder.
 
 Prerequisites:
 Ensure you have downloaded the dataset from OpenNeuro.
-A helper script (Raw_data_download_tutorial.py) is available to facilitate downloading the raw data.
-If you prefer not to reprocess the data, you can download the preprocessed derivatives directly using another script (Derivatives_download_tutorial.py).
+A helper script (Raw_data_download_tutorial.py) is available to facilitate downloading
+the raw data.
+If you prefer not to reprocess the data, you can download the preprocessed derivatives
+directly using another script (Derivatives_download_tutorial.py).
 
 Preprocessing Steps:
     1. Event extraction and correction
@@ -23,33 +24,33 @@ Preprocessing Steps:
 """
 
 # Imports modules
-import mne
 import pickle
-import numpy as np
 from pathlib import Path
 
-from lib.events_analysis import (
-    event_correction,
-    add_condition_tag,
-    add_block_tag,
-    delete_trigger_column,
-    check_baseline_tags,
-    cognitive_control_check,
-    standardize_labels,
-)
+import mne
+import numpy as np
 
+from lib.AdHoc_modification import (
+    adhoc_subject_3,
+)
 from lib.data_extractions import (
     extract_subject_from_bdf,
     get_age_gender,
     get_events_from_raw,
 )
-from lib.utils import ensure_dir
-from lib.AdHoc_modification import (
-    adhoc_subject_3,
-)
 from lib.EMG_Control import EMG_control_single_th
+from lib.events_analysis import (
+    add_block_tag,
+    add_condition_tag,
+    check_baseline_tags,
+    cognitive_control_check,
+    delete_trigger_column,
+    event_correction,
+    standardize_labels,
+)
+from lib.utils import ensure_dir
 
-project_root = Path().resolve().parents[1]
+project_root = Path.cwd().parents[1]
 # %%
 # Processing Variables
 
@@ -60,7 +61,8 @@ data_dir = project_root / "ds003626"
 # It can be changed and saved in other direction
 save_dir = data_dir / "derivatives"
 
-# Subjects and blacks. Subjects range from 1 to 10 (no subject 0). Blocks range from 1 to 3, (no block 0)
+# Subjects and blocks. Subjects range from 1 to 10 (no subject 0).
+# Blocks range from 1 to 3, (no block 0)
 N_Subj_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 N_block_arr = [1, 2, 3]
 
@@ -83,7 +85,7 @@ ICA_COMPONENTS = None  # Use None to automatic selection
 ICA_METHOD = "infomax"
 MAX_PCA_COMPONENTS = None
 RANDOM_STATE = 23
-fit_params = dict(extended=True)
+fit_params = {"extended": True}
 
 # #################### EMG Control
 EMG_FILTER_LOW_CUT = 1
@@ -115,13 +117,19 @@ T_MAX = 3.5
 # 32 = Abajo / Down
 # 33 = Derecha / Right
 # 34 = Izquierda / Left
-event_id = dict(Arriba=31, Abajo=32, Derecha=33, Izquierda=34)
+event_id = {"Arriba": 31, "Abajo": 32, "Derecha": 33, "Izquierda": 34}
 
 # Baseline id
-baseline_id = dict(Baseline=13)
+baseline_id = {"Baseline": 13}
 
 # Report initialization
-report = dict(Age=None, Gender="-", Recording_time=None, Ans_R=None, Ans_W=None)
+report = {
+    "Age": None,
+    "Gender": "-",
+    "Recording_time": None,
+    "Ans_R": None,
+    "Ans_W": None,
+}
 
 # Montage
 ADQUISITION_EQ = "biosemi128"
@@ -190,7 +198,7 @@ for N_S in N_Subj_arr:
         file_path = save_dir / (Num_s + "/ses-0" + str(N_B))
         ensure_dir(str(file_path))
         file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_report.pkl")
-        with open(file_name, "wb") as output:
+        with file_name.open("wb") as output:
             pickle.dump(report, output, pickle.HIGHEST_PROTOCOL)
 
         print("Processing EXG")
@@ -226,7 +234,7 @@ for N_S in N_Subj_arr:
         t_baseline = (
             event_array[event_array[:, 2] == 14, 0]
             - event_array[event_array[:, 2] == 13, 0]
-        ) / rawdata.info["sfreq"]  # noqa
+        ) / rawdata.info["sfreq"]
         t_baseline = t_baseline[0]
         Baseline = mne.Epochs(
             rawdata,

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
@@ -7,8 +5,8 @@ Data processing
 """
 
 # Imports
+
 import numpy as np
-from typing import Tuple
 
 
 def calculate_power_windowed(
@@ -18,7 +16,7 @@ def calculate_power_windowed(
     window_step: float,
     t_min: float,
     t_max: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate power in a windowed manner for a given signal.
 
@@ -89,8 +87,7 @@ def select_time_window(
     end = min(round(t_end * fs), t_max)
 
     # Copy interval
-    X = X[:, :, start:end]
-    return X
+    return X[:, :, start:end]
 
 
 def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
@@ -112,18 +109,17 @@ def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
 
     if condition_upper == "ALL":
         return X, Y
+    if condition_upper in {"PRON", "PRONOUNCED"}:
+        p = 0
+    elif condition_upper in {"IN", "INNER"}:
+        p = 1
+    elif condition_upper in {"VIS", "VISUALIZED"}:
+        p = 2
     else:
-        if condition_upper in {"PRON", "PRONOUNCED"}:
-            p = 0
-        elif condition_upper in {"IN", "INNER"}:
-            p = 1
-        elif condition_upper in {"VIS", "VISUALIZED"}:
-            p = 2
-        else:
-            raise ValueError(f"The condition '{condition}' doesn't exist!")
+        raise ValueError(f"The condition '{condition}' doesn't exist!")
 
-        X_r = X[Y[:, 2] == p]
-        Y_r = Y[Y[:, 2] == p]
+    X_r = X[Y[:, 2] == p]
+    Y_r = Y[Y[:, 2] == p]
 
     return X_r, Y_r
 
@@ -166,11 +162,8 @@ def transform_for_classificator(
             condition = conditions[n_group][n_ind]
             class_label = classes[n_group][n_ind]
 
-            try:
-                X_aux, Y_aux = filter_by_condition(X, Y, condition)
-                X_aux, Y_aux = filter_by_class(X_aux, Y_aux, class_label)
-            except Exception as ex:
-                raise ex
+            X_aux, Y_aux = filter_by_condition(X, Y, condition)
+            X_aux, Y_aux = filter_by_class(X_aux, Y_aux, class_label)
 
             if n_ind == 0 and n_group == 0:
                 X_final = X_aux.copy()
@@ -238,20 +231,19 @@ def filter_by_class(X: np.ndarray, Y: np.ndarray, class_condition: str) -> tuple
 
     if class_condition_upper == "ALL":
         return X, Y
+    if class_condition_upper in {"UP", "ARRIBA"}:
+        p = 0
+    elif class_condition_upper in {"DOWN", "ABAJO"}:
+        p = 1
+    elif class_condition_upper in {"RIGHT", "DERECHA"}:
+        p = 2
+    elif class_condition_upper in {"LEFT", "IZQUIERDA"}:
+        p = 3
     else:
-        if class_condition_upper in {"UP", "ARRIBA"}:
-            p = 0
-        elif class_condition_upper in {"DOWN", "ABAJO"}:
-            p = 1
-        elif class_condition_upper in {"RIGHT", "DERECHA"}:
-            p = 2
-        elif class_condition_upper in {"LEFT", "IZQUIERDA"}:
-            p = 3
-        else:
-            raise ValueError(f"The class '{class_condition}' doesn't exist!")
+        raise ValueError(f"The class '{class_condition}' doesn't exist!")
 
-        X_r = X[Y[:, 1] == p]
-        Y_r = Y[Y[:, 1] == p]
+    X_r = X[Y[:, 1] == p]
+    Y_r = Y[Y[:, 1] == p]
 
     return X_r, Y_r
 
@@ -277,7 +269,7 @@ def split_trial_in_time(
     - tuple: A tuple containing the split X and Y arrays.
     """
     print("Input X shape:", X.shape)
-    n_trials, n_channels, t_max = X.shape
+    n_trials, _, t_max = X.shape
 
     # Window parameters
     samples_per_window = round(fs * window_len)

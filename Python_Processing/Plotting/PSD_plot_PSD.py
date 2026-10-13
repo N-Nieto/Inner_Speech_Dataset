@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
@@ -7,18 +5,17 @@ PSD - Plotting
 """
 
 # In[] Imports modules
-import mne
-
-import numpy as np
 import matplotlib.pyplot as plt
+import mne
+import numpy as np
 
 from lib.data_extractions import (
     extract_block_data_from_subject,
     extract_data_from_subject,
 )
 from lib.data_processing import (
-    filter_by_condition,
     filter_by_class,
+    filter_by_condition,
 )
 from lib.utils import (
     ensure_dir,

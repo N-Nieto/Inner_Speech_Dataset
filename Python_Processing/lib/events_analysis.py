@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Created on Wed Oct 16 15:18:45 2019
 Last Update: 09/06/2022
@@ -11,13 +9,13 @@ Last Update: 09/06/2022
 import mne
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict, Optional
 
+from lib.exceptions import EventSequenceError
 
 # Constants for better readability and maintainability
 EVENT_CODES = {
-    # Protocol start (NOTE THAT IN TABLE 3 OF THE PAPER, THERE IS A TYPO AND 1 IS MENTIONED AS STARTING TAG,
-    # (INSTED OF 11), Baseline start, run start
+    # Protocol start (NOTE THAT IN TABLE 3 OF THE PAPER, THERE IS A TYPO AND 1 IS
+    # MENTIONED AS STARTING TAG, INSTEAD OF 11), Baseline start, run start
     "STARTS": [11, 13],
     "ENDS": [12, 14],  # Protocol end, Baseline end, run end
     "RUN_START": [15],  # Run start
@@ -62,10 +60,11 @@ GROUP_TRANSITIONS = {
 
 def event_correction(events: pd.DataFrame) -> pd.DataFrame:
     """
-    Correct and validate event sequences in EEG/MRI data by detecting and inserting missing events.
+    Correct and validate event sequences by detecting and inserting missing events.
 
-    This function analyzes temporal event sequences to identify missing events based on expected
-    patterns and relationships between event codes. It inserts corrected events with appropriate
+    This function analyzes temporal event sequences to identify missing events based on
+    expected patterns and relationships between event codes. It inserts corrected events
+    with appropriate
     timing offsets and validates the final sequence against expected constraints.
 
     Args:
@@ -75,7 +74,8 @@ def event_correction(events: pd.DataFrame) -> pd.DataFrame:
             - Column 2: Event codes (numeric)
 
     Returns:
-        pd.DataFrame: Corrected events DataFrame with same structure as input, sorted by time.
+        pd.DataFrame: Corrected events DataFrame with same structure as input, sorted
+        by time.
         Missing events are inserted with calculated timestamps.
 
     Raises:
@@ -130,14 +130,12 @@ def _validate_input_dataframe(events: pd.DataFrame) -> pd.DataFrame:
 
     # Exclude specific tag and ensure proper filtering
     mask = events.iloc[:, 2].astype(int) != EVENT_CODES["EXCLUDE"]
-    events = events.loc[mask].reset_index(drop=True)
-
-    return events
+    return events.loc[mask].reset_index(drop=True)
 
 
 def _build_event_analysis_arrays(
     events_df: pd.DataFrame,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Build event code arrays for sequence analysis.
 
@@ -145,7 +143,7 @@ def _build_event_analysis_arrays(
         events_df: Cleaned events DataFrame
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]:
+        tuple[np.ndarray, np.ndarray]:
             - Events_code array with shape (n_events, 2) containing [code, position]
             - Event_count array with shape (n_unique_codes, 2) containing [code, count]
     """
@@ -170,7 +168,8 @@ def _detect_missing_tag_code(event_count: np.ndarray) -> int:
     Identify which tag code (31-34) is missing based on minimum count.
 
     Now is working only if one tag is missing.
-    TODO: Improve to handle multiple missing tags by analysisg the block structure and not the whole recording.
+    TODO: Improve to handle multiple missing tags by analysing the block structure
+    and not the whole recording.
 
     Args:
         event_count: Event_count array with [code, count]
@@ -189,7 +188,7 @@ def _detect_missing_tag_code(event_count: np.ndarray) -> int:
 
 def _check_event_transition(
     current_code: int, next_code: int, event_count: np.ndarray
-) -> Optional[int]:
+) -> int | None:
     """
     Check if transition between current and next event code follows expected patterns.
 
@@ -199,56 +198,54 @@ def _check_event_transition(
         event_count: Event_count array for statistical analysis
 
     Returns:
-        Optional[int]: Missing event code if transition is invalid, None if valid
+        int | None: Missing event code if transition is invalid, None if valid
     """
     # Check: 42 (Start mark) should be followed by Tags (31-34) or 44 (Useful interval)
     if current_code == 42 and next_code not in EXPECTED_TRANSITIONS[42]:
         if next_code == 44:
             return _detect_missing_tag_code(event_count)
-        else:
-            raise Exception("Invalid transition after start mark (42)")
+        raise EventSequenceError("Invalid transition after start mark (42)")
 
     # Check: Tags (31-34) should be followed by 44, ALWAYS after tags a 44 should come
-    elif current_code in GROUP_TRANSITIONS["TAGS"] and next_code != 44:
+    if current_code in GROUP_TRANSITIONS["TAGS"] and next_code != 44:
         return 44  # Missing useful interval after tag
 
     # Check: 44 (Useful interval) should be followed by 45
-    elif current_code == 44 and next_code not in EXPECTED_TRANSITIONS[44]:
+    if current_code == 44 and next_code not in EXPECTED_TRANSITIONS[44]:
         return 45  # Missing concentration interval
 
-    # Check: 45 (Concentration interval) should be followed by 46 (Rest interval) (ALWAYS)
-    elif current_code == 45 and next_code != 46:
+    # Check: 45 (Concentration interval) should ALWAYS be followed by 46 (Rest)
+    if current_code == 45 and next_code != 46:
         return 46  # Missing rest interval
 
     # Check: 46 (Rest interval) should be followed by valid next events
-    elif current_code == 46 and next_code not in EXPECTED_TRANSITIONS[46]:
-        # There are three possible valid next events after 46: 42 (Start), 16 (End run), or 17 (Question)
+    if current_code == 46 and next_code not in EXPECTED_TRANSITIONS[46]:
+        # There are three possible valid next events after 46:
+        # 42 (Start), 16 (End run), or 17 (Question)
         # If the answer is the next code, the question mark is missing
         if next_code in EVENT_CODES["ANSWERS"]:
             return 17  # Missing question before answer
-        elif next_code in EVENT_CODES["TAGS"]:
+        if next_code in EVENT_CODES["TAGS"]:
             return 42  # Missing Concentration (start) mark
-        elif next_code in EVENT_CODES["INTER_RUN_REST"]:
+        if next_code in EVENT_CODES["INTER_RUN_REST"]:
             return 16  # Missing end of run
-        else:
-            raise Exception("Invalid transition after rest interval (46)")
+        raise EventSequenceError("Invalid transition after rest interval (46)")
 
     # Check: Blocks (21-23) should be followed by 42 (Start mark)
-    elif current_code in GROUP_TRANSITIONS["BLOCKS"] and next_code != 42:
+    if current_code in GROUP_TRANSITIONS["BLOCKS"] and next_code != 42:
         return 42  # Missing start after block
 
     # Check: Answers (61-64) should be followed by 42 or 16
-    elif current_code in GROUP_TRANSITIONS["ANSWERS"] and next_code not in (42, 16):
+    if current_code in GROUP_TRANSITIONS["ANSWERS"] and next_code not in (42, 16):
         # After anwers, either a new trial starts (42) or the block ends (16)
         if next_code in EVENT_CODES["TAGS"]:
             return 42  # Missing Concentration (start) mark
-        elif next_code in EVENT_CODES["INTER_RUN_REST"]:
+        if next_code in EVENT_CODES["INTER_RUN_REST"]:
             return 16  # Missing end of run
-        else:
-            raise Exception("Invalid transition after answers (61-64)")
+        raise EventSequenceError("Invalid transition after answers (61-64)")
 
     # Check: 17 (Question) should be followed by Answers (61-64)
-    elif current_code == 17 and next_code not in EXPECTED_TRANSITIONS[17]:
+    if current_code == 17 and next_code not in EXPECTED_TRANSITIONS[17]:
         print("Missing answer after question")
         print("Filling with 61")
         return 61  # Missing answer after question
@@ -258,7 +255,7 @@ def _check_event_transition(
 
 def _detect_sequence_warnings(
     events_code: np.ndarray, event_count: np.ndarray
-) -> List[Dict[str, int]]:
+) -> list[dict[str, int]]:
     """
     Scan event sequence to detect missing events and invalid transitions.
 
@@ -267,7 +264,7 @@ def _detect_sequence_warnings(
         event_count: Event_count array with [code, count]
 
     Returns:
-        List[Dict[str, int]]: List of warnings with position and missing code
+        list[dict[str, int]]: List of warnings with position and missing code
     """
     warnings = []
 
@@ -295,7 +292,7 @@ def _detect_sequence_warnings(
 
 def _create_correction_event(
     events_df: pd.DataFrame, position: int, missing_code: int
-) -> List:
+) -> list:
     """
     Create a new event row for insertion as a correction.
 
@@ -328,7 +325,7 @@ def _create_correction_event(
 
 
 def _apply_event_corrections(
-    events_df: pd.DataFrame, warnings: List[Dict]
+    events_df: pd.DataFrame, warnings: list[dict]
 ) -> pd.DataFrame:
     """
     Apply detected corrections to events DataFrame by inserting missing events.
@@ -360,11 +357,7 @@ def _apply_event_corrections(
 
     # Sort by time (first column) to maintain temporal order
     time_column = corrected_events.columns[0]
-    corrected_events = corrected_events.sort_values(by=time_column).reset_index(
-        drop=True
-    )
-
-    return corrected_events
+    return corrected_events.sort_values(by=time_column).reset_index(drop=True)
 
 
 def _get_event_count(count_array: np.ndarray, target_code: int) -> int:
@@ -397,7 +390,7 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
         _get_event_count(event_count_fix, code) for code in EVENT_CODES["STARTS"]
     ]
     if not all(count == 1 for count in start_counts):
-        raise Exception("Missing or duplicate start codes")
+        raise EventSequenceError("Missing or duplicate start codes")
     print("Start codes OK")
 
     # Check 2: Block consistency (15, 16, 51 counts should follow specific relationship)
@@ -406,7 +399,7 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
     count_51 = _get_event_count(event_count_fix, 51)
 
     if not (count_15 == count_16 and count_15 == count_51 + 1):
-        raise Exception("Missing or inconsistent blocks")
+        raise EventSequenceError("Missing or inconsistent blocks")
     print("Blocks OK")
 
     # Check 3: Tags (31-34) should all have equal counts
@@ -414,7 +407,7 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
         _get_event_count(event_count_fix, code) for code in EVENT_CODES["TAGS"]
     ]
     if not all(count == tag_counts[0] for count in tag_counts):
-        raise Exception("Missing or inconsistent tags")
+        raise EventSequenceError("Missing or inconsistent tags")
     print("Tags OK")
 
     # Check 4: Marks (42, 44, 45, 46) should all have equal counts
@@ -422,7 +415,9 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
         _get_event_count(event_count_fix, code) for code in EVENT_CODES["MARKS"]
     ]
     if not all(count == mark_counts[0] for count in mark_counts):
-        raise Exception("Missing or inconsistent marks, got " + str(mark_counts))
+        raise EventSequenceError(
+            "Missing or inconsistent marks, got " + str(mark_counts)
+        )
     print("Marks OK")
 
     # Check 5: Cognitive control - questions should match answers
@@ -432,13 +427,13 @@ def _validate_corrected_events(event_count_fix: np.ndarray):
     )
 
     if question_count != total_answers:
-        raise Exception("Missing cognitive control question/answer pairs")
+        raise EventSequenceError("Missing cognitive control question/answer pairs")
     print("Cognitive control OK")
 
 
-def cognitive_control_check(events: pd.DataFrame) -> Tuple[int, int]:
+def cognitive_control_check(events: pd.DataFrame) -> tuple[int, int]:
     """
-    Check the correctness of cognitive control answers using vectorized pandas operations.
+    Check the correctness of cognitive control answers (vectorized pandas operations).
 
     This version uses pandas shift operations for maximum efficiency.
 
@@ -487,9 +482,11 @@ def cognitive_control_check(events: pd.DataFrame) -> Tuple[int, int]:
     insufficient_context_questions = question_mask.sum() - len(valid_questions)
     if insufficient_context_questions > 0:
         print(
-            f"Warning: {insufficient_context_questions} questions skipped due to insufficient context"
+            f"Warning: {insufficient_context_questions} questions skipped due to "
+            "insufficient context"
         )
-        ans_w += insufficient_context_questions  # Count these as wrong for conservative reporting
+        # Count these as wrong for conservative reporting
+        ans_w += insufficient_context_questions
 
     # Validation and reporting
     total_questions_found = question_mask.sum()
@@ -499,11 +496,13 @@ def cognitive_control_check(events: pd.DataFrame) -> Tuple[int, int]:
             print("All cognitive control answers are correct")
         else:
             print(
-                f"Cognitive control results: {ans_r} correct, {ans_w} wrong out of {total_questions_found} questions"
+                f"Cognitive control results: {ans_r} correct, {ans_w} wrong out of "
+                f"{total_questions_found} questions"
             )
     else:
         print(
-            f"Validation note: Found {total_questions_found} questions, validated {ans_r + ans_w}"
+            f"Validation note: Found {total_questions_found} questions, "
+            f"validated {ans_r + ans_w}"
         )
 
     return int(ans_r), int(ans_w)
@@ -511,7 +510,7 @@ def cognitive_control_check(events: pd.DataFrame) -> Tuple[int, int]:
 
 def count_events_by_condition(
     events: pd.DataFrame,
-) -> Tuple[List[int], List[int], List[int]]:
+) -> tuple[list[int], list[int], list[int]]:
     """
     Count events by condition in the corrected events data.
 
@@ -632,13 +631,14 @@ def add_condition_tag(events: pd.DataFrame) -> pd.DataFrame:
     try:
         picked_indices = mne.pick_events(mne_events, include=[31, 32, 33, 34])
         events_filtered = events.iloc[picked_indices].reset_index(drop=True)
-        return events_filtered
     except Exception as e:
         print(f"Warning: MNE event picking failed: {e}")
         print("Falling back to manual filtering...")
         # Manual filtering as fallback
         mask = events.iloc[:, 2].isin([31, 32, 33, 34])
         return events[mask].reset_index(drop=True)
+    else:
+        return events_filtered
 
 
 def delete_trigger_column(events: pd.DataFrame) -> pd.DataFrame:

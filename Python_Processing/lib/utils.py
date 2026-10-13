@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto
 @email: nnieto@sinc.unl.edu.ar
@@ -7,7 +5,9 @@
 Utilitys for Inner speech dataset processing
 """
 
-import os
+from pathlib import Path
+
+from lib.exceptions import InvalidSelectionError
 
 
 def ensure_dir(dir_name: str) -> None:
@@ -20,8 +20,7 @@ def ensure_dir(dir_name: str) -> None:
     Returns:
     - None
     """
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
+    Path(dir_name).mkdir(parents=True, exist_ok=True)
 
 
 def picks_from_channels(channels):
@@ -59,7 +58,7 @@ def picks_from_channels(channels):
     picks = channel_mappings.get(channels, [])
 
     if not picks:
-        raise Exception("Invalid channels name")
+        raise InvalidSelectionError("Invalid channels name")
 
     return picks
 
@@ -114,9 +113,9 @@ def map_condition(cnd: str) -> str:
     - str: The standardized condition label.
     """
     if not cnd:
-        raise Exception("Condition is empty!")
+        raise InvalidSelectionError("Condition is empty!")
 
-    elif cnd.lower() in ["a", "all", "todos"]:
+    if cnd.lower() in ["a", "all", "todos"]:
         Cond = "all"
     elif cnd.lower() in ["p", "pron", "pronounced", "pronunciado"]:
         Cond = "pronounced"
@@ -125,7 +124,7 @@ def map_condition(cnd: str) -> str:
     elif cnd.lower() in ["v", "vis", "visualized", "visualizado"]:
         Cond = "visualized"
     else:
-        raise Exception("Wrong name of condition!")
+        raise InvalidSelectionError("Wrong name of condition!")
     return Cond
 
 
@@ -140,7 +139,7 @@ def map_class(cl: str) -> str:
     - str: The standardized class label.
     """
     if not cl:
-        raise Exception("Class is empty!")
+        raise InvalidSelectionError("Class is empty!")
 
     if cl.lower() in ["a", "all", "todos"]:
         Class = "all"
@@ -153,7 +152,7 @@ def map_class(cl: str) -> str:
     elif cl.lower() in ["r", "right", "d", "der", "derecha"]:
         Class = "right"
     else:
-        raise Exception("Wrong name of class!")
+        raise InvalidSelectionError("Wrong name of class!")
 
     return Class
 
@@ -168,9 +167,4 @@ def sub_name(N_S: int) -> str:
     Returns:
     - str: The standardized subject name.
     """
-    if N_S < 10:
-        Num_s = "sub-0" + str(N_S)
-    else:
-        Num_s = "sub-" + str(N_S)
-
-    return Num_s
+    return "sub-0" + str(N_S) if N_S < 10 else "sub-" + str(N_S)

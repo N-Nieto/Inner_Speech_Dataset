@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto
 
@@ -9,14 +7,10 @@ Power Spectral Density
 
 import mne
 import numpy as np
-
-
+from Data_extractions import extract_block_data_from_subject, extract_data_from_subject
+from Data_processing import filter_by_class, filter_by_condition
 from mne.time_frequency import psd_welch
-from Data_extractions import extract_block_data_from_subject
-from Data_extractions import extract_data_from_subject
-from Data_processing import filter_by_condition, filter_by_class
 from Utilitys import ensure_dir, unify_names
-
 
 # In[]: Processing Variables
 
@@ -33,8 +27,8 @@ N_S_list = [1]
 
 # Data filtering
 datatype = "EEG"
-Conditions_list = ["Pron"]      # All - Pron - Inner - Vis
-Classes_list = ["Left"]        # All - Up - Down - Right - Left
+Conditions_list = ["Pron"]  # All - Pron - Inner - Vis
+Classes_list = ["Left"]  # All - Up - Down - Right - Left
 
 # Fix all random states
 random_state = 23
@@ -67,7 +61,6 @@ for Classes in Classes_list:
     for Cond in Conditions_list:
         count = 1
         for N_S in N_S_list:
-
             # Load full subject's data
             X_s, Y = extract_data_from_subject(root_dir, N_S, datatype)
 
@@ -89,17 +82,25 @@ for Classes in Classes_list:
         # In[]
         # Calculated TFR for a particular clase in a
         # particular condition for the selected subjects
-        print("Calculated PSD for Class: " + Classes + " in Condition: " + Cond)            # noqa
+        print("Calculated PSD for Class: " + Classes + " in Condition: " + Cond)
         print("with the information of Subjects: " + str(N_S_list))
 
         # Create a subject with all trials
         X_S._data = X_data
 
-        psds, freqs = psd_welch(X_S, fmin=fmin, fmax=fmax, tmin=tmin,
-                                tmax=tmax, n_fft=n_fft, average=average,
-                                n_overlap=n_overlap, picks=picks)
+        psds, freqs = psd_welch(
+            X_S,
+            fmin=fmin,
+            fmax=fmax,
+            tmin=tmin,
+            tmax=tmax,
+            n_fft=n_fft,
+            average=average,
+            n_overlap=n_overlap,
+            picks=picks,
+        )
         if save_bool:
             ensure_dir(save_dir)
             Cond, Classes = unify_names(Cond, Class=Classes)
-            file_name = save_dir + "PSD_" + Cond + "_" + Classes + "_PSD-tfr.h5"            # noqa
+            file_name = save_dir + "PSD_" + Cond + "_" + Classes + "_PSD-tfr.h5"
             psds.save(fname=file_name, overwrite=overwrite)

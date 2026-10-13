@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nieto Nicolás
 @email: nnieto@sinc.unl.edu.ar
 
-Utilitys from extract, read and load data from Inner Speech Dataset
+Utilities from extract, read and load data from Inner Speech Dataset
 """
 
-import mne
 import gc
-import os
+import pickle
+from pathlib import Path
+
+import mne
 import numpy as np
 import pandas as pd
-import pickle
 from mne.io import Raw
-from pathlib import Path
+
 from lib.utils import sub_name, unify_names
 
 
@@ -35,7 +34,7 @@ def extract_subject_from_bdf(data_dir: Path, n_s: int, n_b: int) -> tuple[Raw, s
 
     # Load data
     file_name = (
-        data_dir / f"{num_s}/ses-0{n_b}/eeg/{num_s}_ses-0{n_b}_task-innerspeech_eeg.bdf"  # noqa
+        data_dir / f"{num_s}/ses-0{n_b}/eeg/{num_s}_ses-0{n_b}_task-innerspeech_eeg.bdf"
     )
     raw_data = mne.io.read_raw_bdf(
         input_fname=file_name, preload=True, verbose="WARNING"
@@ -56,8 +55,8 @@ def extract_data_from_subject(root_dir: Path, n_s: int, datatype: str) -> tuple:
     Returns:
     - tuple: A tuple containing the stacked data (X) and events (Y).
     """
-    data = dict()
-    y = dict()
+    data = {}
+    y = {}
     n_b_arr = [1, 2, 3]
     datatype = datatype.lower()
 
@@ -69,17 +68,26 @@ def extract_data_from_subject(root_dir: Path, n_s: int, datatype: str) -> tuple:
 
         if datatype == "eeg":
             # Load data and events
-            file_name = f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/{num_s}_ses-0{n_b}_eeg-epo.fif"  # noqa
+            file_name = (
+                f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/"
+                f"{num_s}_ses-0{n_b}_eeg-epo.fif"
+            )
             X = mne.read_epochs(file_name, verbose="WARNING")
             data[n_b] = X._data
 
         elif datatype == "exg":
-            file_name = f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/{num_s}_ses-0{n_b}_exg-epo.fif"  # noqa
+            file_name = (
+                f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/"
+                f"{num_s}_ses-0{n_b}_exg-epo.fif"
+            )
             X = mne.read_epochs(file_name, verbose="WARNING")
             data[n_b] = X._data
 
         elif datatype == "baseline":
-            file_name = f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/{num_s}_ses-0{n_b}_baseline-epo.fif"  # noqa
+            file_name = (
+                f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/"
+                f"{num_s}_ses-0{n_b}_baseline-epo.fif"
+            )
             X = mne.read_epochs(file_name, verbose="WARNING")
             data[n_b] = X._data
 
@@ -158,10 +166,8 @@ def extract_report(root_dir: Path, n_b: int, n_s: int):
     sub_dir = root_dir / "derivatives" / num_s / f"ses-0{n_b}"
     file_name = sub_dir / f"{num_s}_ses-0{n_b}_report.pkl"
 
-    with open(file_name, "rb") as input_file:
-        report = pickle.load(input_file)
-
-    return report
+    with file_name.open("rb") as input_file:
+        return pickle.load(input_file)
 
 
 def extract_tfr(
@@ -185,9 +191,7 @@ def extract_tfr(
 
     fname = trf_dir / f"{tfr_method}_{cond}_{class_label}_{trf_type}-tfr.h5"
 
-    trf = mne.time_frequency.read_tfrs(fname)[0]
-
-    return trf
+    return mne.time_frequency.read_tfrs(fname)[0]
 
 
 def extract_data_multisubject(
@@ -209,38 +213,37 @@ def extract_data_multisubject(
     tmp_list_Y = []
     rows = []
     total_elem = len(n_s_list) * 3  # assume 3 sessions per subject
-    s = 0
     datatype = datatype.lower()
 
-    for n_s in n_s_list:
+    for s, n_s in enumerate(n_s_list):
         print("Iteration ", s)
         print("Subject ", n_s)
         for n_b in n_b_arr:
             num_s = sub_name(n_s)
 
             base_file_name = (
-                f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/{num_s}_ses-0{n_b}"  # noqa
+                f"{root_dir}/derivatives/{num_s}/ses-0{n_b}/{num_s}_ses-0{n_b}"
             )
             events_file_name = f"{base_file_name}_events.dat"
             data_tmp_Y = np.load(events_file_name, allow_pickle=True)
             tmp_list_Y.append(data_tmp_Y)
             print("Inner iteration ", n_b)
 
-            if datatype == "eeg" or datatype == "exg" or datatype == "baseline":  # noqa
+            if datatype == "eeg" or datatype == "exg" or datatype == "baseline":
                 # Load data and events
                 data_tmp_X = None
 
                 if datatype == "eeg":
                     eeg_file_name = f"{base_file_name}_eeg-epo.fif"
-                    data_tmp_X = mne.read_epochs(eeg_file_name, verbose="WARNING")._data  # noqa
+                    data_tmp_X = mne.read_epochs(eeg_file_name, verbose="WARNING")._data
                 elif datatype == "exg":
                     exg_file_name = f"{base_file_name}_exg-epo.fif"
-                    data_tmp_X = mne.read_epochs(exg_file_name, verbose="WARNING")._data  # noqa
+                    data_tmp_X = mne.read_epochs(exg_file_name, verbose="WARNING")._data
                 elif datatype == "baseline":
                     baseline_file_name = f"{base_file_name}_baseline-epo.fif"
                     data_tmp_X = mne.read_epochs(
                         baseline_file_name, verbose="WARNING"
-                    )._data  # noqa
+                    )._data
 
                 if data_tmp_X is not None:
                     rows.append(data_tmp_X.shape[0])
@@ -255,15 +258,13 @@ def extract_data_multisubject(
                 else:
                     raise ValueError("Invalid Datatype")
 
-        s += 1
-
     x = np.empty((sum(rows), chann, steps))
     y = np.empty((sum(rows), columns))
     offset = 0
 
     # Put elements of the list into numpy array
     for i in range(total_elem):
-        print("Saving element {} into array ".format(i))
+        print(f"Saving element {i} into array ")
         x[offset : offset + rows[i], :, :] = tmp_list_X[0]
 
         if datatype == "eeg" or datatype == "exg":
@@ -281,9 +282,8 @@ def extract_data_multisubject(
     if datatype == "eeg" or datatype == "exg":
         # For eeg and exg types, there is a predefined label that is returned
         return x, y
-    else:
-        # For baseline datatypes, there's no such label (rest phase)
-        return x
+    # For baseline datatypes, there's no such label (rest phase)
+    return x
 
 
 def get_events_from_raw(rawdata, N_S, N_B):
@@ -297,9 +297,7 @@ def get_events_from_raw(rawdata, N_S, N_B):
     else:
         events = mne.find_events(rawdata, initial_event=True, consecutive=True)
 
-    events = pd.DataFrame(events, columns=["Time", "Trigger", "Code"])
-
-    return events
+    return pd.DataFrame(events, columns=["Time", "Trigger", "Code"])
 
 
 def load_events(root_dir: Path, n_s: int, n_b: int):
@@ -317,14 +315,16 @@ def load_events(root_dir: Path, n_s: int, n_b: int):
     num_s = sub_name(n_s)
 
     # Create file name
-    file_name = os.path.join(
-        root_dir, "derivatives", num_s, f"ses-0{n_b}", f"{num_s}_ses-0{n_b}_events.dat"
+    file_name = (
+        Path(root_dir)
+        / "derivatives"
+        / num_s
+        / f"ses-0{n_b}"
+        / f"{num_s}_ses-0{n_b}_events.dat"
     )
 
     # Load events
-    events = pd.read_pickle(file_name)
-
-    return events
+    return pd.read_pickle(file_name)
 
 
 def get_age_gender(N_S: int) -> tuple[int, str]:

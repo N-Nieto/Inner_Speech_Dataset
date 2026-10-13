@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
@@ -7,16 +5,15 @@ Event Related Potentials - Plotting
 """
 
 # In[] Imports modules
-import mne
-
-import numpy as np
 import matplotlib.pyplot as plt
+import mne
+import numpy as np
 
 from lib.data_extractions import (
     extract_block_data_from_subject,
     extract_data_from_subject,
 )
-from lib.data_processing import filter_by_condition, filter_by_class
+from lib.data_processing import filter_by_class, filter_by_condition
 from lib.utils import ensure_dir, picks_from_channels
 
 # In[] Imports modules
@@ -48,7 +45,7 @@ t_start = -0.5
 t_end = 4
 spatial_colors = True
 plot_cues_bool = True
-clim = dict(eeg=[-10, 15])
+clim = {"eeg": [-10, 15]}
 ylim = clim
 bandwidth = 2
 fontsize = 20
@@ -92,8 +89,8 @@ for Classes in Classes_list:
                 Y_data = np.vstack((Y_data, Y_class))
 
         # In[]: Plotting
-        print("Ploting ERPs for Class: " + Classes + " in Condition: " + Cond)  # noqa
-        print("with the information of Subjects: " + str(N_S_list))  # noqa
+        print("Ploting ERPs for Class: " + Classes + " in Condition: " + Cond)
+        print("with the information of Subjects: " + str(N_S_list))
 
         # Put all data
         X_S._data = X_data
@@ -135,4 +132,4 @@ for Classes in Classes_list:
                 + channels
                 + "_.png",
                 transparent=True,
-            )  # noqa
+            )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Feb 15 16:45:35 2021
 
@@ -12,8 +11,8 @@ Plot single TRF
 
 import matplotlib.pyplot as plt
 
-from lib.utils import ensure_dir
 from lib.data_extractions import extract_tfr
+from lib.utils import ensure_dir
 
 # In[] Imports modules
 
@@ -111,7 +110,7 @@ for band in range(len(bands)):
                 + Class
                 + "_band"
                 + str(band)
-                + "_Baseline.png",  # noqa
+                + "_Baseline.png",
                 transparent=True,
             )
 
@@ -125,6 +124,6 @@ for band in range(len(bands)):
                 + Class
                 + "_band"
                 + str(band)
-                + "_NO_Baseline.png",  # noqa
+                + "_NO_Baseline.png",
                 transparent=True,
             )
