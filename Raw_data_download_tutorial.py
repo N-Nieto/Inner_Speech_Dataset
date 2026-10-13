@@ -36,7 +36,10 @@ from Python_Processing.lib.download_helper import (
     get_raw_eeg,
 )
 
-data_dir = Path.cwd().parent
+try:  # folder that contains this repository
+    data_dir = Path(__file__).resolve().parent.parent
+except NameError:  # run cell by cell or in Jupyter, from the repo root
+    data_dir = Path.cwd().parent
 
 # OPTION 1: Download the whole raw dataset
 # (This takes a while, as 30 big files need to be downloaded)

@@ -17,17 +17,22 @@ verbose : bool, optional
 """
 
 # Imports
-import pathlib as Path
-import pickle
+from pathlib import Path
 
+import mne
 import numpy as np
 
-from lib.data_extractions import extract_block_data_from_subject, extract_report
 from lib.data_processing import calculate_power_windowed
+from lib.derivatives_io import (
+    derivative_path,
+    load_events,
+    load_report,
+    save_report,
+)
 
 
 def EMG_control_single_th(
-    root_dir: Path,
+    derivatives_dir: Path,
     N_Subj_arr: list,
     N_block_arr: list,
     low_f: float,
@@ -44,8 +49,8 @@ def EMG_control_single_th(
     """
     Parameters
     ----------
-    root_dir : str
-        Processed data direction
+    derivatives_dir : Path
+        The ``derivatives`` folder written by the pipeline (read and updated)
     N_Subj_arr : list
         array with subjects to perform the control
     N_block_arr : list
@@ -88,14 +93,12 @@ def EMG_control_single_th(
     # In[]
     # Subjets
     for N_S in N_Subj_arr:
-        Num_s = "sub-0" + str(N_S) if N_S < 10 else "sub-" + str(N_S)
-
         # Blocks
         for N_B in N_block_arr:
             # Load baseline data
-            datatype = "baseline"
-            X_baseline, Y = extract_block_data_from_subject(
-                root_dir, N_S, datatype, N_B
+            X_baseline = mne.read_epochs(
+                derivative_path(derivatives_dir, N_S, N_B, "baseline-epo.fif"),
+                verbose="WARNING",
             )
 
             X_baseline.filter(low_f, high_f)
@@ -144,8 +147,11 @@ def EMG_control_single_th(
             # ========================================================================
             # ========================================================================
             # Load EOG and EMG data
-            datatype = "EXG"
-            EMG, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B)
+            EMG = mne.read_epochs(
+                derivative_path(derivatives_dir, N_S, N_B, "exg-epo.fif"),
+                verbose="WARNING",
+            )
+            Y = load_events(derivatives_dir, N_S, N_B)
 
             # Filter in the same band
             EMG.filter(low_f, high_f)
@@ -231,7 +237,7 @@ def EMG_control_single_th(
             )
 
             # Update Report
-            report = extract_report(root_dir, N_B, N_S)
+            report = load_report(derivatives_dir, N_S, N_B)
 
             report["EMG_trials"] = R_EMG[:, 0]
             report["Power_EXG7"] = R_EMG[:, 1]
@@ -244,14 +250,6 @@ def EMG_control_single_th(
             report["Baseline_EXG8_std"] = std_Base_energy_8
 
             # Save report
-            file_name = (
-                root_dir
-                / "derivatives"
-                / Num_s
-                / ("ses-0" + str(N_B))
-                / (Num_s + "_ses-0" + str(N_B) + "_report.pkl")
-            )
-            with file_name.open("wb") as output:
-                pickle.dump(report, output, pickle.HIGHEST_PROTOCOL)
+            save_report(report, derivatives_dir, N_S, N_B)
 
     print("EMG Control Done")

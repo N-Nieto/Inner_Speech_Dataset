@@ -46,7 +46,10 @@ print("Available OpenNeuro versions:", list_versions())
 # The script InnerSpeech_preprocessing expects the data be saved in the parent folder
 # of the project.
 # Using this path to download the dataset
-data_dir = Path.cwd().parent
+try:  # folder that contains this repository
+    data_dir = Path(__file__).resolve().parent.parent
+except NameError:  # run cell by cell or in Jupyter, from the repo root
+    data_dir = Path.cwd().parent
 
 # Option 1: Download all derivatives (This might take a while)
 get_derivatives(

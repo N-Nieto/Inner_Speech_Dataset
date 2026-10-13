@@ -5,93 +5,81 @@ Created on Thu Aug  6 11:53:54 2020
 @email: nnieto@sinc.unl.edu.ar
 
 Ad hoc correction subject 3:
-    Subject S03 inform in block 1 he did not realice the inner speech paradigm.
-    Instaed he perform the visualized paradigm.
+    Subject S03 inform in block 1 he did not realize the inner speech paradigm.
+    Instead he perform the visualized paradigm.
 """
 
 from pathlib import Path
 
-import pandas as pd
+import numpy as np
+
+from lib.derivatives_io import (
+    EVENTS_COLUMNS,
+    derivative_path,
+    load_events,
+    save_events,
+)
+
+# Rows (0-based) of sub-03 ses-01 recorded as inner speech but performed as
+# visualized condition: the second inner speech run (trials 80-119)
+_SUB03_SES01_ROWS = slice(80, 120)
+_CONDITION_COL = EVENTS_COLUMNS.index("condition")
+_VISUALIZED = 2
 
 
-def adhoc_subject_3(root_dir: Path, verbose: bool = True) -> None:
+def adhoc_subject_3(derivatives_dir: Path, verbose: bool = True) -> None:
     """
     Correct and save events data for Subject 3, Block 1 (paradigm execution error).
 
-    This function specifically addresses an issue where the subject executed a different
-    paradigm than intended for trials 80-119 (40 trials total).
+    The subject performed the visualized paradigm instead of inner speech in
+    trials 80-119 (40 trials), so their condition label is set to 2
+    (visualized). Running it more than once gives the same result.
 
     Parameters:
-    - root_dir (Path): The root directory containing the data.
+    - derivatives_dir (Path): The ``derivatives`` folder written by the pipeline.
     - verbose (bool): Whether to print additional information. Default True.
 
     Raises:
     - FileNotFoundError: If the events file cannot be found.
     - ValueError: If the data doesn't match expected structure or correction fails.
-    - Exception: For other unexpected errors.
     """
-    num_s = "sub-03"
-    n_b = 1
-
-    # Construct file path
-    file_path = (
-        root_dir
-        / "derivatives"
-        / num_s
-        / f"ses-0{n_b}"
-        / f"{num_s}_ses-0{n_b}_events.dat"
-    )
+    n_s, n_b = 3, 1
+    file_path = derivative_path(derivatives_dir, n_s, n_b, "events.dat")
 
     # Check if file exists
     if not file_path.exists():
         raise FileNotFoundError(f"Events file not found: {file_path}")
 
-    # Load events data using pandas (preserving column structure)
-    events_df = pd.read_csv(file_path, index_col=0)
+    events = load_events(derivatives_dir, n_s, n_b)
 
     if verbose:
         print(f"Loaded events data from: {file_path}")
-        print(f"Data shape: {events_df.shape}")
-        print(f"Columns: {list(events_df.columns)}")
+        print(f"Data shape: {events.shape}")
 
     # Check if we have enough rows for the correction
-    if len(events_df) < 120:
-        raise ValueError(f"Expected at least 120 rows, got {len(events_df)}")
-
-    # Identify the code column (assuming it's the third column or named 'Code')
-    code_column = None
-    if "condition" in events_df.columns:
-        code_column = "condition"
-    elif events_df.shape[1] >= 3:
-        # Assume third column is the code if no 'Code' column found
-        code_column = events_df.columns[2]
-    else:
-        raise ValueError("Could not identify code column in events data")
+    if len(events) < _SUB03_SES01_ROWS.stop:
+        raise ValueError(
+            f"Expected at least {_SUB03_SES01_ROWS.stop} rows, got {len(events)}"
+        )
 
     if verbose:
-        original_counts = events_df[code_column].value_counts().sort_index()
-        print("Original code distribution:")
-        for code, count in original_counts.items():
-            print(f"  condition {code}: {count} trials")
+        _print_condition_counts("Original", events)
 
-    # Apply correction: change codes for trials 80-119 (40 trials) to 2
-    # Note: DataFrame indexing is 0-based, so rows 80-119 correspond to indices 80-119
-    events_df.loc[80:119, code_column] = 2
+    # Apply correction: trials 80-119 (40 trials) -> visualized condition
+    events[_SUB03_SES01_ROWS, _CONDITION_COL] = _VISUALIZED
 
     if verbose:
-        updated_counts = events_df[code_column].value_counts().sort_index()
-        print("Updated code distribution:")
-        for code, count in updated_counts.items():
-            print(f"  condition {code}: {count} trials")
+        _print_condition_counts("Updated", events)
 
     # Validate the correction
-    code_0_count = (events_df[code_column] == 0).sum()
-    code_1_count = (events_df[code_column] == 1).sum()
-    code_2_count = (events_df[code_column] == 2).sum()
+    condition = events[:, _CONDITION_COL]
+    code_0_count = int((condition == 0).sum())
+    code_1_count = int((condition == 1).sum())
+    code_2_count = int((condition == 2).sum())
 
     expected_0 = 40  # Pronounced trials
-    expected_1 = 40  # Imagined trials
-    expected_2 = 120  # Visually guided trials (80 original + 40 corrected)
+    expected_1 = 40  # Inner speech trials
+    expected_2 = 120  # Visualized trials (80 original + 40 corrected)
 
     if (
         code_0_count == expected_0
@@ -101,8 +89,8 @@ def adhoc_subject_3(root_dir: Path, verbose: bool = True) -> None:
         if verbose:
             print("✓ AdHoc correction successful for Subject 3 Block 1")
             print(f"  - condition 0 (Pronounced): {code_0_count} trials")
-            print(f"  - condition 1 (Imagined): {code_1_count} trials")
-            print(f"  - condition 2 (Visually guided): {code_2_count} trials")
+            print(f"  - condition 1 (Inner speech): {code_1_count} trials")
+            print(f"  - condition 2 (Visualized): {code_2_count} trials")
     else:
         error_msg = (
             f"Correction validation failed. Expected: "
@@ -112,7 +100,14 @@ def adhoc_subject_3(root_dir: Path, verbose: bool = True) -> None:
         raise ValueError(error_msg)
 
     # Save the corrected data back to the same file
-    events_df.to_csv(file_path, index=False)
+    save_events(events, derivatives_dir, n_s, n_b)
 
     if verbose:
         print(f"✓ Corrected data saved to: {file_path}")
+
+
+def _print_condition_counts(label: str, events: np.ndarray) -> None:
+    values, counts = np.unique(events[:, _CONDITION_COL], return_counts=True)
+    print(f"{label} condition distribution:")
+    for code, count in zip(values, counts, strict=True):
+        print(f"  condition {code}: {count} trials")

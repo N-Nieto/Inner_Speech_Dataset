@@ -24,7 +24,6 @@ Preprocessing Steps:
 """
 
 # Imports modules
-import pickle
 from pathlib import Path
 
 import mne
@@ -38,6 +37,7 @@ from lib.data_extractions import (
     get_age_gender,
     get_events_from_raw,
 )
+from lib.derivatives_io import derivative_path, save_events, save_report
 from lib.EMG_Control import EMG_control_single_th
 from lib.events_analysis import (
     add_block_tag,
@@ -48,9 +48,15 @@ from lib.events_analysis import (
     event_correction,
     standardize_labels,
 )
-from lib.utils import ensure_dir
+from lib.utils import find_project_root
 
-project_root = Path.cwd().parents[1]
+# Folder that contains this repository and the dataset (ds003626). Resolved from
+# this file's location, so it does not depend on the working directory.
+try:
+    _HERE = Path(__file__).resolve().parent
+except NameError:  # run cell by cell or in Jupyter: no __file__
+    _HERE = Path.cwd()
+project_root = find_project_root(_HERE)
 # %%
 # Processing Variables
 
@@ -160,7 +166,7 @@ for N_S in N_Subj_arr:
         print("Session: " + str(N_B))
 
         # Load data from BDF file
-        rawdata, Num_s = extract_subject_from_bdf(data_dir, N_S, N_B)
+        rawdata, _ = extract_subject_from_bdf(data_dir, N_S, N_B)
 
         # Get raw events
         events = get_events_from_raw(rawdata, N_S, N_B)
@@ -194,12 +200,8 @@ for N_S in N_Subj_arr:
             # Filtering raw data
             rawdata.filter(LOW_CUT, HIGH_CUT)
         # %%
-        # Save report
-        file_path = save_dir / (Num_s + "/ses-0" + str(N_B))
-        ensure_dir(str(file_path))
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_report.pkl")
-        with file_name.open("wb") as output:
-            pickle.dump(report, output, pickle.HIGHEST_PROTOCOL)
+        # Save report (also creates the session folder)
+        save_report(report, save_dir, N_S, N_B)
 
         print("Processing EXG")
         # EXG
@@ -223,7 +225,7 @@ for N_S in N_Subj_arr:
         )
 
         # Save EOG
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_exg-epo.fif")
+        file_name = derivative_path(save_dir, N_S, N_B, "exg-epo.fif")
         epochsEOG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
         del epochsEOG
         print("EXG Saved")
@@ -250,7 +252,7 @@ for N_S in N_Subj_arr:
         )
 
         # Save Baseline
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_baseline-epo.fif")
+        file_name = derivative_path(save_dir, N_S, N_B, "baseline-epo.fif")
         Baseline.save(file_name, fmt="double", split_size="2GB", overwrite=True)
         del Baseline
         print("Baseline Saved")
@@ -363,7 +365,7 @@ for N_S in N_Subj_arr:
             ica.apply(epochsEEG)
 
         # Save EEG
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_eeg-epo.fif")
+        file_name = derivative_path(save_dir, N_S, N_B, "eeg-epo.fif")
         epochsEEG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
 
         # Standarize and save events
@@ -372,17 +374,16 @@ for N_S in N_Subj_arr:
         events = delete_trigger_column(events)
         events = standardize_labels(events)
 
-        # Save events
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_events.dat")
-        events.to_csv(file_name)
+        # Save events: (n_trials, 4) array [sample, class, condition, session]
+        save_events(events, save_dir, N_S, N_B)
 
-if 3 in N_Subj_arr:
-    #  Ad Hoc Modifications
-    adhoc_subject_3(root_dir=data_dir)
+if 3 in N_Subj_arr and 1 in N_block_arr:
+    #  Ad Hoc Modifications (sub-03, session 1)
+    adhoc_subject_3(derivatives_dir=save_dir)
 
 # EMG Control
 EMG_control_single_th(
-    root_dir=data_dir,
+    derivatives_dir=save_dir,
     N_Subj_arr=N_Subj_arr,
     N_block_arr=N_block_arr,
     low_f=EMG_FILTER_LOW_CUT,

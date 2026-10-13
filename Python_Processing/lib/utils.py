@@ -168,3 +168,25 @@ def sub_name(N_S: int) -> str:
     - str: The standardized subject name.
     """
     return "sub-0" + str(N_S) if N_S < 10 else "sub-" + str(N_S)
+
+
+def find_project_root(start: str | Path) -> Path:
+    """
+    Return the folder that contains this repository (and, by default, the
+    ``ds003626`` dataset), searching upwards from ``start``.
+
+    The repository is recognised by its ``Python_Processing`` folder, so the
+    result is the same whether ``start`` is the repository root,
+    ``Python_Processing`` or any folder inside it.
+
+    Raises:
+    - FileNotFoundError: If no parent of ``start`` contains ``Python_Processing``.
+    """
+    start = Path(start).resolve()
+    for folder in (start, *start.parents):
+        if (folder / "Python_Processing").is_dir():
+            return folder.parent
+    raise FileNotFoundError(
+        f"Could not find the Inner_Speech_Dataset repository above {start}. "
+        "Run the script from inside the repository or set data_dir explicitly."
+    )
