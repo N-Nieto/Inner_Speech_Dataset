@@ -1,41 +1,49 @@
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
-Plot Inter Trial Coherence
+Plot Inter Trial Coherence (ITC) computed by TFR_representations.py
 """
-# Imports modules
+
+# %%
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from lib.data_extractions import extract_tfr
-from lib.utils import ensure_dir
+from innerspeech.data_extractions import extract_tfr
+from innerspeech.utils import find_project_root
 
-# Imports modules
+# Folder that contains this repository, the dataset and the results
+try:
+    _HERE = Path(__file__).resolve().parent
+except NameError:  # run cell by cell or in Jupyter: no __file__
+    _HERE = Path.cwd()
+project_root = find_project_root(_HERE)
 
-root_spectrograms = "../"
-save_dir = "../"
+# %%
+# TFR results written by TFR_representations.py
+tfr_dir = project_root / "results" / "tfr"
+# Where the figures are written
+save_dir = project_root / "results" / "figures"
 
-
-TRF_method = "Morlet"  # "Multitaper - "Morlet"
-# Cue are present at t=0
-TRF_type = "itc"
+TFR_method = "Morlet"  # "Multitaper" - "Morlet"
+# Cues are present at t=0
+TFR_type = "itc"
 
 # Baseline
 baseline_bool = False
-baseline = [3, 4]
+baseline = (3, 4)
 
 # Comparison
 Condition = "In"
 Class = "All"
 
 # Load Data
-# Load Class and condition
 itc = extract_tfr(
-    trf_dir=root_spectrograms,
+    tfr_dir=tfr_dir,
     cond=Condition,
     class_label=Class,
-    trf_method=TRF_method,
-    trf_type=TRF_type,
+    tfr_method=TFR_method,
+    tfr_type=TFR_type,
 )
 
 if baseline_bool:
@@ -45,8 +53,7 @@ if baseline_bool:
 # Plot Options
 combine = "mean"  # "mean" - "rms"
 dB = False
-vmin = 0
-vmax = 0.30
+vlim = (0, 0.30)
 fmin = 0.5
 fmax = 100
 
@@ -60,21 +67,20 @@ plt.rcParams.update({"font.size": fontsize})
 plt.rcParams.update({"legend.framealpha": 0})
 plot_cues_bool = True
 
+# %%
 fig = plt.figure(figsize=(20, 10))
 ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+
+itc.plot(combine=combine, dB=dB, axes=ax, vlim=vlim, fmin=fmin, fmax=fmax, show=False)
+
+# Plot cue onset, cue offset and end of the action interval
 if plot_cues_bool:
-    plt.plot([0, 0], [-15, 150], axes=ax, color="black")
-    plt.plot([0.5, 0.5], [-15, 150], axes=ax, color="black")
-    plt.plot([3, 3], [-15, 150], axes=ax, color="black")
+    for t in (0, 0.5, 3):
+        ax.axvline(t, color="black")
 
-itc.plot(combine=combine, dB=dB, axes=ax, vmin=vmin, vmax=vmax, fmin=fmin, fmax=fmax)
-
-title = "ITC - Condition: " + Condition + " in Class " + Class
-ax.set_title(title, fontsize=fontsize)
+title = f"ITC - Condition: {Condition} in Class {Class}"
 ax.set_title(title, fontsize=fontsize)
 
 if save_bool:
-    ensure_dir(save_dir)
-    fig.savefig(
-        save_dir + prefix + "_" + Condition + "_" + Class + ".png", transparent=True
-    )
+    save_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_dir / f"{prefix}_{Condition}_{Class}.png", transparent=True)

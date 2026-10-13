@@ -32,7 +32,7 @@ parent_directory/
 # %%
 from pathlib import Path
 
-from Python_Processing.lib.download_helper import (
+from innerspeech.download_helper import (
     get_raw_eeg,
 )
 

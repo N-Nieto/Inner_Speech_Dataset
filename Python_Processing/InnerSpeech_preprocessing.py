@@ -29,17 +29,17 @@ from pathlib import Path
 import mne
 import numpy as np
 
-from lib.AdHoc_modification import (
+from innerspeech.adhoc_modification import (
     adhoc_subject_3,
 )
-from lib.data_extractions import (
+from innerspeech.data_extractions import (
     extract_subject_from_bdf,
     get_age_gender,
     get_events_from_raw,
 )
-from lib.derivatives_io import derivative_path, save_events, save_report
-from lib.EMG_Control import EMG_control_single_th
-from lib.events_analysis import (
+from innerspeech.derivatives_io import derivative_path, save_events, save_report
+from innerspeech.emg_control import EMG_control_single_th
+from innerspeech.events_analysis import (
     add_block_tag,
     add_condition_tag,
     check_baseline_tags,
@@ -48,7 +48,7 @@ from lib.events_analysis import (
     event_correction,
     standardize_labels,
 )
-from lib.utils import find_project_root
+from innerspeech.utils import find_project_root
 
 # Folder that contains this repository and the dataset (ds003626). Resolved from
 # this file's location, so it does not depend on the working directory.
