@@ -1,3 +1,56 @@
+[project]
+name = "inner-speech-dataset"
+version = "0.1.0"
+description = "Download, preprocess and analyse the Inner Speech EEG dataset (OpenNeuro ds003626)"
+readme = "README.md"
+license-files = ["LICENSE"]
+authors = [{ name = "Nicolás Nieto", email = "n.nieto@fz-juelich.de" }]
+requires-python = ">=3.10"
+# Lower bounds = oldest versions the pipeline was tested with
+dependencies = [
+    "mne>=1.6",
+    "numpy>=1.26",
+    "pandas>=1.5",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+# Download helpers (Python_Processing/lib/download_helper.py and the *_tutorial.py files)
+download = [
+    "datalad>=1.0",
+    "git-annex>=10.20250101",  # wheels for Linux (glibc >= 2.34), macOS and Windows
+    "tqdm>=4.60",
+]
+# Database_exploration_tutorial.ipynb
+notebook = [
+    "scikit-learn>=1.3",
+    "ipykernel>=6",
+]
+
+[project.urls]
+Repository = "https://github.com/N-Nieto/Inner_Speech_Dataset"
+Dataset = "https://openneuro.org/datasets/ds003626"
+Paper = "https://doi.org/10.1038/s41597-022-01147-2"
+
+[dependency-groups]
+dev = ["ruff>=0.15"]
+
+# ----------------------------------------------------------------------
+# This repository is a collection of scripts, not an installable library:
+# installing it only installs the dependencies above.
+# ----------------------------------------------------------------------
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
 [tool.ruff]
 # Lowest supported Python (MNE >= 1.9 requires 3.10); enables PEP 604/585 syntax
 target-version = "py310"

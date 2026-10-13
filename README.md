@@ -2,7 +2,7 @@
 
 ![GitHub](https://img.shields.io/badge/GitHub-InnerSpeech-blue?logo=github) 
 ![Datalad](https://img.shields.io/badge/Datalad-Dataset-orange?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAnFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AAAD////7+/v6+vrx8fHw8PDw7Ozs6Ojo5OTk4ODg3Nzc2NjY1NTU0NDQzMzMyMjIxMTEwMDAvLy8uLi4tLS0rKysqKioqKioqJiYmHh4eGhoaFhYVEREQAAAAAAABkZGRnZ2dnZ2dnZ2d0dHRycnJubm5sbGxqamptbW1paWlpYWFhXV1dTU1NTU0NDQzMzMyMjIxMTEwMDAvLy8uLi4tLS0rKysqKioqJiYmHh4eGhoaFhYVEREQAAAAAAABkZGRnZ2dnZ2dnZ2d0dHRycnJubm5sbGxqamptbW1paWlpYWFhXV1dTU1NTU0NDQzMzMyMjIxMTEwMDAvLy8uLi4tLS0rKysqKioqJiYmHh4eGhoaFhYVEREQAAAAv7MHSAAAAQHRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTEyMzQ1Njc4OTo7PD0+P0BCQ0RFRkdISEpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CGiAAABdRJREFUGBltwQdOgjAUQNH4w2mCE7X7f//mJQMbSYrMMS6srm0O9NbHVYLyJRRA9/jPOb8zB5BDgCqAcAJ8B5IkgeKa6EniF2EXsH1tM7W8BjaqA0dAH4bJA8Swh3yFp+ZwqNxo1KPaK9wP9qzPtqJrG+y/KcF6TD/YhzPXew+g9+FZqlmrA/ggpg9qF+m2MG3h7V5vCPxG1D6aIbr5t+KmfXGvVWr+8O8LXhxK7H2fpvHGprWqkHNl2L+9Y+yI8/B1/qKQZV7GnkP+ns3TvdXh+mYjX1ncF0AAAAASUVORK5CYII=)  
-![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![MNE](https://img.shields.io/badge/MNE-python-blueviolet)
 ![Colab](https://img.shields.io/badge/Colab-Notebook-red?logo=googlecolab)
 
@@ -28,12 +28,37 @@ This repository provides scripts to **download, preprocess, explore, and analyze
 
 ## 1. Environment Setup
 
-Create an environment with all dependencies:
+Dependencies are declared in `pyproject.toml` (Python 3.10 or newer) and pinned in
+`uv.lock`. Optional parts:
+
+| Extra | Adds | Needed for |
+| --- | --- | --- |
+| `download` | `datalad`, `git-annex`, `tqdm` | `Raw_data_download_tutorial.py`, `Derivatives_download_tutorial.py` |
+| `notebook` | `scikit-learn`, `ipykernel` | `Database_exploration_tutorial.ipynb` |
+
+### With [uv](https://docs.astral.sh/uv/) (recommended)
 
 ```bash
-conda env create -f environment.yml
-conda activate inner_speech
+uv sync --all-extras          # creates .venv with the exact versions in uv.lock
+uv run python Python_Processing/InnerSpeech_preprocessing.py
 ```
+
+Use `uv sync --extra download` (or `--extra notebook`) for only one extra, and
+`uv sync -p 3.11` to use another Python version. `uv sync` also installs the
+development tools (`ruff`); add `--no-dev` to skip them.
+
+### With pip (any virtual environment, including conda)
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # or: conda create -n inner_speech python=3.13 && conda activate inner_speech
+pip install ".[download,notebook]"
+```
+
+`pip install .` only installs the dependencies; the scripts are run from the repository.
+
+> **Note:** `git-annex` is installed from PyPI (wheels for Linux with glibc >= 2.34,
+> macOS and Windows). On older Linux systems install it with
+> `conda install -c conda-forge git-annex` or your system package manager.
 
 ## 2. Download the Data
 
@@ -111,7 +136,8 @@ Project Folder
 │  └─  Python_Processing
 │        └─  InnerSpeech_preprocessing.py
 │        └─  lib                                 [Auxiliar functions]
-├─ environment.yml
+├─ pyproject.toml                                [Dependencies and tool settings]
+├─ uv.lock                                       [Pinned versions for uv]
 └─ README.md
 ```
 
