@@ -1,0 +1,33 @@
+[tool.ruff]
+# Lowest supported Python (MNE >= 1.9 requires 3.10); enables PEP 604/585 syntax
+target-version = "py310"
+line-length = 88
+# Lets isort recognise `lib` (Python_Processing/lib) as first-party code
+src = [".", "Python_Processing"]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade (typing.List -> list, Optional[X] -> X | None, ...)
+    "B",        # flake8-bugbear
+    "TRY",      # tryceratops (no bare `raise Exception`, ...)
+    "PTH",      # pathlib instead of os.path
+    "SIM",      # flake8-simplify
+    "C4",       # flake8-comprehensions
+    "RET",      # flake8-return
+    "PIE",      # flake8-pie
+    "PGH",      # pygrep-hooks (specific `# noqa` codes)
+    "RUF",      # ruff-specific (incl. unused `# noqa`)
+]
+ignore = [
+    "TRY003",   # long messages in exception calls are fine for a research codebase
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lib"]
+
+[tool.ruff.format]
+docstring-code-format = true
