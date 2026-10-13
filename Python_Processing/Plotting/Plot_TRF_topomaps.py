@@ -39,7 +39,7 @@ save_bool = False
 # Prefix for saving
 prefix = "TRF_Topomaps"
 
-# Comparation 1
+# Comparison 1
 Condition = "All"
 Class = "All"
 

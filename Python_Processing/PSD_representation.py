@@ -26,7 +26,7 @@ save_dir = "../ds003626/"
 save_bool = False
 overwrite = True
 
-# Subjets list
+# Subjects list
 N_S_list = [1]
 
 # Data filtering
@@ -59,8 +59,8 @@ N_S = 1
 X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B=N_B)
 
 # Set Montage
-Adquisition_eq = "biosemi128"
-montage = mne.channels.make_standard_montage(Adquisition_eq)
+Acquisition_eq = "biosemi128"
+montage = mne.channels.make_standard_montage(Acquisition_eq)
 X_S.set_montage(montage)
 
 # Loop over Classes and Conditions

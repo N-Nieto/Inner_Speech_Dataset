@@ -2,7 +2,7 @@
 @author: Nicolás Nieto
 @email: nnieto@sinc.unl.edu.ar
 
-Utilitys for Inner speech dataset processing
+Utilities for Inner speech dataset processing
 """
 
 from pathlib import Path

@@ -124,7 +124,7 @@ def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
     return X_r, Y_r
 
 
-def transform_for_classificator(
+def transform_for_classifier(
     X: np.ndarray, Y: np.ndarray, classes: list, conditions: list
 ) -> tuple:
     """

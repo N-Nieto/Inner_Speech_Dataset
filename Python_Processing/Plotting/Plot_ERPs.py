@@ -22,7 +22,7 @@ from lib.utils import ensure_dir, picks_from_channels
 root_dir = "../"
 save_dir = "../"
 
-# Subjets
+# Subjects
 N_S_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Data Parameters
@@ -59,8 +59,8 @@ N_S = 1
 # Load a single subject to use the Epoched Object structure
 X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B=N_B)
 
-Adquisition_eq = "biosemi128"
-montage = mne.channels.make_standard_montage(Adquisition_eq)
+Acquisition_eq = "biosemi128"
+montage = mne.channels.make_standard_montage(Acquisition_eq)
 X_S.set_montage(montage)
 
 # Get picks for the selected channels
@@ -89,7 +89,7 @@ for Classes in Classes_list:
                 Y_data = np.vstack((Y_data, Y_class))
 
         # In[]: Plotting
-        print("Ploting ERPs for Class: " + Classes + " in Condition: " + Cond)
+        print("Plotting ERPs for Class: " + Classes + " in Condition: " + Cond)
         print("with the information of Subjects: " + str(N_S_list))
 
         # Put all data

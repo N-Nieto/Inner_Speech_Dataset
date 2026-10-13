@@ -1,7 +1,7 @@
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
-Plot power difference between two clases or conditions.
+Plot power difference between two classes or conditions.
 """
 # In[] Imports modules
 
@@ -39,11 +39,11 @@ save_bool = True
 # Prefix for saving
 prefix = "TRF_differences_Topomaps"
 
-# Comparation 1
+# Comparison 1
 Condition_1 = "Vis"
 Class_1 = "All"
 
-# Comparation 2
+# Comparison 2
 Condition_2 = "Pron"
 Class_2 = "All"
 
@@ -78,7 +78,7 @@ power_2 = extract_tfr(
 )
 
 
-# Create a new Power where the diference will be stored
+# Create a new Power where the difference will be stored
 power_dif = power_1.copy()
 if baseline_bool:
     power_1.apply_baseline(baseline)

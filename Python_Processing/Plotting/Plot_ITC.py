@@ -24,7 +24,7 @@ TRF_type = "itc"
 baseline_bool = False
 baseline = [3, 4]
 
-# Comparation
+# Comparison
 Condition = "In"
 Class = "All"
 

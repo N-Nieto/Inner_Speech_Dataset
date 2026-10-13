@@ -5,8 +5,8 @@ Created on Thu Aug  6 11:53:54 2020
 @email: nnieto@sinc.unl.edu.ar
 
 Ad hoc correction subject 3:
-    Subject S03 inform in block 1 he did not realize the inner speech paradigm.
-    Instead he perform the visualized paradigm.
+    Subject S03 reported that in block 1 he did not perform the inner speech paradigm.
+    Instead, he performed the visualized paradigm.
 """
 
 from pathlib import Path

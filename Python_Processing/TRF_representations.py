@@ -1,7 +1,7 @@
 """
 @author: Nicolás Nieto - nnieto
 
-Time Frecuency Representations
+Time Frequency Representations
 """
 # Imports modules
 
@@ -29,7 +29,7 @@ save_dir = "../"
 save_bool = True
 overwrite = True
 
-# Subjets list
+# Subjects list
 N_S_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Data filtering
@@ -43,7 +43,7 @@ Classes_list = ["All"]
 random_state = 23
 np.random.seed(random_state)
 
-# Time Frecuency Representation Parameters
+# Time Frequency Representation Parameters
 TFR_method = "Morlet"  # Multitaper - Morlet
 fmin = 0.5
 fmax = 100
@@ -69,8 +69,8 @@ N_S = 1
 X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, n_b=N_B)
 
 # Set Montage
-Adquisition_eq = "biosemi128"
-montage = mne.channels.make_standard_montage(Adquisition_eq)
+Acquisition_eq = "biosemi128"
+montage = mne.channels.make_standard_montage(Acquisition_eq)
 X_S.set_montage(montage)
 
 for Classes in Classes_list:
@@ -88,14 +88,14 @@ for Classes in Classes_list:
 
             # Stack trial for every subject
             if count == 1:
-                # Inicialiced
+                # Initialize
                 X_data = X_cond
                 count = 2
             else:
                 # Stack trials
                 X_data = np.vstack((X_data, X_cond))
 
-        # Calculated TFR for a particular clase in
+        # Calculated TFR for a particular class in
         # a particular condition for the selected subjects
         print(
             "Calculated "

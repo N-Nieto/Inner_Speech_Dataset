@@ -237,7 +237,7 @@ def _check_event_transition(
 
     # Check: Answers (61-64) should be followed by 42 or 16
     if current_code in GROUP_TRANSITIONS["ANSWERS"] and next_code not in (42, 16):
-        # After anwers, either a new trial starts (42) or the block ends (16)
+        # After answers, either a new trial starts (42) or the block ends (16)
         if next_code in EVENT_CODES["TAGS"]:
             return 42  # Missing Concentration (start) mark
         if next_code in EVENT_CODES["INTER_RUN_REST"]:

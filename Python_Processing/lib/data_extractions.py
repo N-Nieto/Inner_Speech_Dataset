@@ -224,13 +224,13 @@ def extract_data_multisubject(
 
 
 def get_events_from_raw(rawdata, N_S, N_B):
-    # Subject 10  on Block 1 have a spureos trigger
+    # Subject 10  on Block 1 have a spurious trigger
     if N_S == 10 and N_B == 1:
         events = mne.find_events(
             rawdata, initial_event=True, consecutive=True, min_duration=0.002
         )
-        # The different load of the events delet
-        # the spureos trigger but also the Baseline finish mark
+        # The different load of the events deletes
+        # the spurious trigger but also the Baseline finish mark
     else:
         events = mne.find_events(rawdata, initial_event=True, consecutive=True)
 

@@ -68,7 +68,7 @@ def EMG_control_single_th(
     window_step : float
         step time the window moves.
     std_times : int | float
-        Number of times that std is sum in the threshold method.
+        Number of standard deviations added to the mean in the threshold method.
     t_min_baseline : float
         Initial time to consider in the Baselines
     t_max_baseline : float
@@ -88,10 +88,10 @@ def EMG_control_single_th(
     """
 
     # Trials of Pronounced condition are excluded in the EMG control
-    Pronunced_id = 0
+    Pronounced_id = 0
 
     # In[]
-    # Subjets
+    # Subjects
     for N_S in N_Subj_arr:
         # Blocks
         for N_B in N_block_arr:
@@ -171,7 +171,7 @@ def EMG_control_single_th(
             EMG_data_EXG8 = EMG_EXG8.get_data()
             EMG_data_EXG8 = np.abs(EMG_data_EXG8)
 
-            # Initialized the taggin vector
+            # Initialize the tagging vector
             EMG_reject = np.zeros(EMG._data.shape[0])
             del EMG, EMG_EXG7, EMG_EXG8
             # ========================================================================
@@ -184,7 +184,7 @@ def EMG_control_single_th(
             # Get number of trials
             Trials, _, _ = EMG_data_EXG8.shape
 
-            # Calculated the threshold for anotated the trial
+            # Calculate the threshold for annotating the trial
             threshold_7 = mean_Base_energy_7 + (std_times * std_Base_energy_7)
             threshold_8 = mean_Base_energy_8 + (std_times * std_Base_energy_8)
 
@@ -218,14 +218,14 @@ def EMG_control_single_th(
                 if (
                     mean_Trial_Energy_8 > threshold_8
                     or mean_Trial_Energy_7 > threshold_7
-                ) and Y[n_trial, 2] != Pronunced_id:
+                ) and Y[n_trial, 2] != Pronounced_id:
                     trial_power_7 = np.append(trial_power_7, mean_Trial_Energy_7)
                     trial_power_8 = np.append(trial_power_8, mean_Trial_Energy_8)
                     drop_epoched = np.append(drop_epoched, n_trial)
                     EMG_reject[n_trial] = 1
 
                     if verbose:
-                        print("Warnign at trial", n_trial + 1)
+                        print("Warning at trial", n_trial + 1)
 
             # In[]: Update Report
             R_EMG = np.vstack([drop_epoched, trial_power_7, trial_power_8])

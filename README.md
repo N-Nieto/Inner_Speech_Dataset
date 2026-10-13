@@ -135,7 +135,7 @@ Project Folder
 │  ├─ Database_exploration_tutorial.ipynb
 │  └─  Python_Processing
 │        └─  InnerSpeech_preprocessing.py
-│        └─  lib                                 [Auxiliar functions]
+│        └─  lib                                 [Auxiliary functions]
 ├─ pyproject.toml                                [Dependencies and tool settings]
 ├─ uv.lock                                       [Pinned versions for uv]
 └─ README.md

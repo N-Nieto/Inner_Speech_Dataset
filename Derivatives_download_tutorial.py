@@ -1,7 +1,7 @@
 """
 ## Downloading the derivatives Inner Speech Dataset
 
-This scripts provides a simple Python interface to download the
+This script provides a simple Python interface to download the
 **Inner Speech EEG dataset** from OpenNeuro without requiring any knowledge of DataLad.
 
 All DataLad operations happen **in the background**:

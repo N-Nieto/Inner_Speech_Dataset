@@ -85,7 +85,7 @@ NOTCH_BOOL = True
 DS_RATE = 4
 
 # #################### ICA
-# If False, ICA is not applyed
+# If False, ICA is not applied
 ICA_BOOL = False
 ICA_COMPONENTS = None  # Use None to automatic selection
 ICA_METHOD = "infomax"
@@ -97,7 +97,7 @@ fit_params = {"extended": True}
 EMG_FILTER_LOW_CUT = 1
 EMG_FILTER_HIGH_CUT = 20
 
-# Slide window desing
+# Slide window design
 # Window len (time in sec)
 WINDOW_LEN = 0.5
 # slide window step (time in sec)
@@ -107,7 +107,7 @@ WINDOW_STEP = 0.05
 STD_TIMES = 3  # How many times the std to set the threshold
 
 # %%
-# ------------------ Fixed variables from the adquisition process ------------------
+# ------------------ Fixed variables from the acquisition process ------------------
 
 # Baseline
 T_MIN_BASELINE = 0
@@ -138,9 +138,9 @@ report = {
 }
 
 # Montage
-ADQUISITION_EQ = "biosemi128"
+ACQUISITION_EQ = "biosemi128"
 # Get montage
-MONTAGE = mne.channels.make_standard_montage(ADQUISITION_EQ)
+MONTAGE = mne.channels.make_standard_montage(ACQUISITION_EQ)
 
 # Extern channels
 Ref_channels = ["EXG1", "EXG2"]
@@ -278,7 +278,7 @@ for N_S in N_Subj_arr:
             baseline=None,
         )
 
-        # ICA Prosessing
+        # ICA Processing
 
         if ICA_BOOL:
             # Get a full trials including EXG channels
@@ -361,14 +361,14 @@ for N_S in N_Subj_arr:
             )
             ica.exclude.extend(exg_inds_EXG8)
 
-            print("Appling ICA")
+            print("Applying ICA")
             ica.apply(epochsEEG)
 
         # Save EEG
         file_name = derivative_path(save_dir, N_S, N_B, "eeg-epo.fif")
         epochsEEG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
 
-        # Standarize and save events
+        # Standardize and save events
         events = add_condition_tag(events)
         events = add_block_tag(events, N_B=N_B)
         events = delete_trigger_column(events)

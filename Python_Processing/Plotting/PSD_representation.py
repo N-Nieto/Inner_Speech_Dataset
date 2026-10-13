@@ -22,7 +22,7 @@ save_dir = "../"
 save_bool = False
 overwrite = True
 
-# Subjets list
+# Subjects list
 N_S_list = [1]
 
 # Data filtering
@@ -53,8 +53,8 @@ N_S = 1
 X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B=N_B)
 
 # Set Montage
-Adquisition_eq = "biosemi128"
-montage = mne.channels.make_standard_montage(Adquisition_eq)
+Acquisition_eq = "biosemi128"
+montage = mne.channels.make_standard_montage(Acquisition_eq)
 X_S.set_montage(montage)
 
 for Classes in Classes_list:
@@ -72,7 +72,7 @@ for Classes in Classes_list:
 
             # Stack trial for every subject
             if count == 1:
-                # Inicialiced
+                # Initialize
                 X_data = X_cond
                 count = 2
             else:
@@ -80,7 +80,7 @@ for Classes in Classes_list:
                 X_data = np.vstack((X_data, X_cond))
 
         # In[]
-        # Calculated TFR for a particular clase in a
+        # Calculated TFR for a particular class in a
         # particular condition for the selected subjects
         print("Calculated PSD for Class: " + Classes + " in Condition: " + Cond)
         print("with the information of Subjects: " + str(N_S_list))
