@@ -6,17 +6,18 @@ readme = "README.md"
 license-files = ["LICENSE"]
 authors = [{ name = "Nicolás Nieto", email = "n.nieto@fz-juelich.de" }]
 requires-python = ">=3.10"
-# Lower bounds = oldest versions the pipeline was tested with
+# Lower bounds = oldest versions the code was tested with
 dependencies = [
-    "mne>=1.6",
+    "mne>=1.7",          # Epochs.compute_tfr / compute_psd, vlim= in TFR plots
     "numpy>=1.26",
     "pandas>=1.5",
     "scipy>=1.10",
     "matplotlib>=3.7",
+    "h5io>=0.2",         # saving/reading PSD and TFR results (.h5)
 ]
 
 [project.optional-dependencies]
-# Download helpers (Python_Processing/lib/download_helper.py and the *_tutorial.py files)
+# Download helpers (innerspeech.download_helper and the *_tutorial.py files)
 download = [
     "datalad>=1.0",
     "git-annex>=10.20250101",  # wheels for Linux (glibc >= 2.34), macOS and Windows
@@ -36,27 +37,26 @@ Paper = "https://doi.org/10.1038/s41597-022-01147-2"
 [dependency-groups]
 dev = ["ruff>=0.15", "codespell>=2.4"]
 
-# ----------------------------------------------------------------------
-# This repository is a collection of scripts, not an installable library:
-# installing it only installs the dependencies above.
-# ----------------------------------------------------------------------
+# The shared code lives in the `innerspeech` package (src/innerspeech); the
+# scripts in Python_Processing/ and the tutorials import it. Install the repo
+# in editable mode so changes to the package are picked up immediately:
+#   uv sync --all-extras          or          pip install -e ".[download,notebook]"
 [build-system]
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = []
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.uv]
-package = false
 default-groups = ["dev"]
 
 [tool.ruff]
 # Lowest supported Python (MNE >= 1.9 requires 3.10); enables PEP 604/585 syntax
 target-version = "py310"
 line-length = 88
-# Lets isort recognise `lib` (Python_Processing/lib) as first-party code
-src = [".", "Python_Processing"]
+# Lets isort recognise `innerspeech` (src/innerspeech) as first-party code
+src = ["src", "Python_Processing"]
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
@@ -80,7 +80,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lib"]
+known-first-party = ["innerspeech"]
 
 [tool.ruff.format]
 docstring-code-format = true

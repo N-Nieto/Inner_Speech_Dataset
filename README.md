@@ -51,10 +51,13 @@ development tools (`ruff`); add `--no-dev` to skip them.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # or: conda create -n inner_speech python=3.13 && conda activate inner_speech
-pip install ".[download,notebook]"
+pip install -e ".[download,notebook]"
 ```
 
-`pip install .` only installs the dependencies; the scripts are run from the repository.
+Both install the shared code as the `innerspeech` package (from `src/innerspeech`,
+in editable mode, so your changes are used immediately) together with its
+dependencies. The scripts and tutorials import it, e.g.
+`from innerspeech.data_extractions import extract_data_from_subject`.
 
 > **Note:** `git-annex` is installed from PyPI (wheels for Linux with glibc >= 2.34,
 > macOS and Windows). On older Linux systems install it with
@@ -128,18 +131,26 @@ Project Folder
 
 ``` lua
 Project Folder
-└─ ds003626                                      [Data]
-├─ Inner_Speech_Dataset                          [This GitHub repository]
-│  ├─ Raw_data_download_tutorial.py
-│  ├─ Derivatives_download_tutorial.py
-│  ├─ Database_exploration_tutorial.ipynb
-│  └─  Python_Processing
-│        └─  InnerSpeech_preprocessing.py
-│        └─  lib                                 [Auxiliary functions]
-├─ pyproject.toml                                [Dependencies and tool settings]
-├─ uv.lock                                       [Pinned versions for uv]
-└─ README.md
+├─ ds003626                                      [Data]
+├─ results                                       [Created by the analysis scripts]
+│  ├─ psd/   tfr/                                [PSD and TFR results (.h5)]
+│  └─ figures/
+└─ Inner_Speech_Dataset                          [This GitHub repository]
+   ├─ Raw_data_download_tutorial.py
+   ├─ Derivatives_download_tutorial.py
+   ├─ Database_exploration_tutorial.ipynb
+   ├─ src/innerspeech/                           [Shared code, installed as a package]
+   ├─ Python_Processing/
+   │  ├─ InnerSpeech_preprocessing.py            [Raw data -> derivatives]
+   │  ├─ PSD_representation.py                   [PSD per condition/class -> results/psd]
+   │  ├─ TFR_representations.py                  [Power/ITC -> results/tfr]
+   │  └─ Plotting/                               [ERPs, PSD, ITC and TFR topomaps -> results/figures]
+   ├─ pyproject.toml                             [Dependencies and tool settings]
+   ├─ uv.lock                                    [Pinned versions for uv]
+   └─ README.md
 ```
+
+Run `TFR_representations.py` before the ITC and TFR plotting scripts; they read its results.
 
 
 ## 6. If you are curious about the collection process or want to collect your own data: Stimulation Protocol
