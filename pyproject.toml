@@ -34,7 +34,7 @@ Dataset = "https://openneuro.org/datasets/ds003626"
 Paper = "https://doi.org/10.1038/s41597-022-01147-2"
 
 [dependency-groups]
-dev = ["ruff>=0.15"]
+dev = ["ruff>=0.15", "codespell>=2.4"]
 
 # ----------------------------------------------------------------------
 # This repository is a collection of scripts, not an installable library:
@@ -84,3 +84,9 @@ known-first-party = ["lib"]
 
 [tool.ruff.format]
 docstring-code-format = true
+
+[tool.codespell]
+# Run with: codespell   (spell-checks code, comments, docs and notebooks)
+skip = "uv.lock,LICENSE,.git,.venv,*.pyc,.ruff_cache"
+# NumPy function names that look like typos
+ignore-words-list = "arange"
