@@ -5,7 +5,7 @@ description = "Download, preprocess and analyse the Inner Speech EEG dataset (Op
 readme = "README.md"
 license-files = ["LICENSE"]
 authors = [{ name = "Nicolás Nieto", email = "n.nieto@fz-juelich.de" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # Lower bounds = oldest versions the code was tested with
 dependencies = [
     "mne>=1.7",          # Epochs.compute_tfr / compute_psd, vlim= in TFR plots
@@ -50,10 +50,18 @@ where = ["src"]
 
 [tool.uv]
 default-groups = ["dev"]
+# Platforms uv.lock is resolved for (keeps the lockfile small). pip installs are
+# not affected; add a line here to support another platform with `uv sync`.
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64' and implementation_name == 'cpython'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64' and implementation_name == 'cpython'",
+    "sys_platform == 'darwin' and implementation_name == 'cpython'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64' and implementation_name == 'cpython'",
+]
 
 [tool.ruff]
-# Lowest supported Python (MNE >= 1.9 requires 3.10); enables PEP 604/585 syntax
-target-version = "py310"
+# Lowest supported Python (requires-python); enables PEP 604/585 syntax
+target-version = "py311"
 line-length = 88
 # Lets isort recognise `innerspeech` (src/innerspeech) as first-party code
 src = ["src", "Python_Processing"]
