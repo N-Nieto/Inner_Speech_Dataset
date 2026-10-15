@@ -36,7 +36,13 @@ Dataset = "https://openneuro.org/datasets/ds003626"
 Paper = "https://doi.org/10.1038/s41597-022-01147-2"
 
 [dependency-groups]
-dev = ["ruff>=0.15", "codespell>=2.4"]
+dev = [
+    "ruff>=0.15",
+    "codespell>=2.4",
+    "pytest>=8",
+    "edfio>=0.4",                 # BDF export for the synthetic test recordings
+    "bids-validator-deno>=3",     # BIDS validator used by the tests and bids/
+]
 
 # The shared code lives in the `innerspeech` package (src/innerspeech); the
 # scripts in Python_Processing/ and the tutorials import it. Install the repo
@@ -60,12 +66,17 @@ environments = [
     "sys_platform == 'win32' and platform_machine == 'AMD64' and implementation_name == 'cpython'",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = ["ignore::RuntimeWarning:mne"]
+
 [tool.ruff]
 # Lowest supported Python (requires-python); enables PEP 604/585 syntax
 target-version = "py311"
 line-length = 88
 # Lets isort recognise `innerspeech` (src/innerspeech) as first-party code
-src = ["src", "Python_Processing"]
+src = ["src", "Python_Processing", "tests"]
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
