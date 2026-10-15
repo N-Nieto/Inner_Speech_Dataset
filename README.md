@@ -174,6 +174,7 @@ Project Folder
    │  └─ Plotting/                               [ERPs, PSD, ITC and TFR topomaps -> results/figures]
    ├─ checks/                                    [Compare a local copy with the published dataset]
    ├─ bids/                                      [Write the BIDS sidecar files of the dataset]
+   ├─ tests/                                     [Automated tests on synthetic data]
    ├─ pyproject.toml                             [Dependencies and tool settings]
    ├─ uv.lock                                    [Pinned versions for uv]
    └─ README.md
