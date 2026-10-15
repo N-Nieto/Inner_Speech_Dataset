@@ -83,12 +83,23 @@ If you prefer to use a already preprocessed data, you can partially or fully dow
 
 The script allows to flexible download only parts of the data, subjects or sessions.
 
-> **Note:** This data was obtained after running the `InnerSpeech_preprocessing.py` with the current settings.
+> **Note:** The published derivatives were made with ICA artifact removal, as described in the paper (`ICA_BOOL = True` in `InnerSpeech_preprocessing.py`). The script's default is `ICA_BOOL = False`, so running it unchanged gives EEG files without ICA (the other files do not depend on ICA).
+
+## Checking your copy
+
+Two scripts in `checks/` compare a local copy of the dataset with the published version (run them from the repository folder):
+
+```bash
+python checks/verify_dataset.py                          # checksums, events rebuilt from raw, epochs files
+python checks/reproduce_session.py --subject 8 --session 3   # re-run the preprocessing for one session and compare
+```
+
+`verify_dataset.py` checks every file against the OpenNeuro checksums of version 2.1.2 and reports which files to download again. Add `--skip-md5` for a quick size-only check. Results are saved in `results/checks/`.
 
 
 ## Exploration tutorial. 
 
-**Notebook:** [`Database_exploration_tutorial.ipynb`](notebooks/Database_exploration_tutorial.ipynb)  
+**Notebook:** [`Database_exploration_tutorial.ipynb`](Database_exploration_tutorial.ipynb)  
 
 - Can also run **directly in Google Colab** (no installation needed).  
 - Includes examples for:  
@@ -97,7 +108,7 @@ The script allows to flexible download only parts of the data, subjects or sessi
   - Visualizing EEG signals  
   - Basic machine learning analysis  
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/your-repo/InnerSpeech-Dataset/blob/main/notebooks/Database_exploration_tutorial.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/N-Nieto/Inner_Speech_Dataset/blob/main/Database_exploration_tutorial.ipynb)
 
 ---
 
@@ -135,7 +146,8 @@ Project Folder
 ├─ ds003626                                      [Data]
 ├─ results                                       [Created by the analysis scripts]
 │  ├─ psd/   tfr/                                [PSD and TFR results (.h5)]
-│  └─ figures/
+│  ├─ figures/
+│  └─ checks/                                    [Output of checks/]
 └─ Inner_Speech_Dataset                          [This GitHub repository]
    ├─ Raw_data_download_tutorial.py
    ├─ Derivatives_download_tutorial.py
@@ -146,6 +158,7 @@ Project Folder
    │  ├─ PSD_representation.py                   [PSD per condition/class -> results/psd]
    │  ├─ TFR_representations.py                  [Power/ITC -> results/tfr]
    │  └─ Plotting/                               [ERPs, PSD, ITC and TFR topomaps -> results/figures]
+   ├─ checks/                                    [Compare a local copy with the published dataset]
    ├─ pyproject.toml                             [Dependencies and tool settings]
    ├─ uv.lock                                    [Pinned versions for uv]
    └─ README.md
