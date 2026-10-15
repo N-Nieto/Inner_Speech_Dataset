@@ -86,7 +86,7 @@ DS_RATE = 4
 
 # #################### ICA
 # If False, ICA is not applied
-ICA_BOOL = False
+ICA_BOOL = True
 ICA_COMPONENTS = None  # Use None to automatic selection
 ICA_METHOD = "infomax"
 MAX_PCA_COMPONENTS = None
