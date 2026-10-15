@@ -4,22 +4,25 @@ result with the published derivatives.
 
 The preprocessing script is executed as it is in the repository, except for
 the subject/session lists, the output folder (the published derivatives are
-never touched) and, with ``--ica``, ICA_BOOL. The new files are written to
-``<project>/results/checks/rerun[_ica]/derivatives``.
+never touched) and, with ``--no-ica``, ICA_BOOL. The new files are written to
+``<project>/results/checks/rerun[_no_ica]/derivatives``.
 
 Usage (from the repository folder, in the project environment):
 
-    python checks/reproduce_session.py --subject 8 --session 3
-    python checks/reproduce_session.py --subject 8 --session 3 --ica   # slow
+    python checks/reproduce_session.py --subject 8 --session 3            # hours (ICA)
+    python checks/reproduce_session.py --subject 8 --session 3 --no-ica   # minutes
+
+Without ICA every file except ``eeg-epo.fif`` should match the published one.
 
 For every file the maximum absolute difference is given relative to the
 standard deviation of the published data (0 = identical; ~1 = unrelated
 signals), plus the median channel-wise correlation. A summary is printed and
-saved next to the new files as ``comparison.json``.
+saved next to the new files as ``comparison_sub-XX_ses-YY.json``.
 """
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -42,12 +45,13 @@ def run_pipeline(n_s: int, n_b: int, data_dir: Path, save_dir: Path, ica: bool) 
         'data_dir = project_root / "ds003626"': f"data_dir = Path({str(data_dir)!r})",
         'save_dir = data_dir / "derivatives"': f"save_dir = Path({str(save_dir)!r})",
     }
-    if ica:
-        overrides["ICA_BOOL = False"] = "ICA_BOOL = True"
     for old, new in overrides.items():
         if old not in src:
             raise RuntimeError(f"{SCRIPT} changed: could not find {old!r}")
         src = src.replace(old, new)
+    src, n = re.subn(r"^ICA_BOOL = \w+", f"ICA_BOOL = {ica}", src, flags=re.MULTILINE)
+    if n != 1:
+        raise RuntimeError(f"{SCRIPT} changed: could not find ICA_BOOL")
     exec(
         compile(src, str(script), "exec"),
         {"__name__": "__main__", "__file__": str(script)},
@@ -104,7 +108,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--subject", type=int, required=True)
     parser.add_argument("--session", type=int, required=True)
-    parser.add_argument("--ica", action="store_true", help="run with ICA_BOOL = True")
+    parser.add_argument(
+        "--no-ica", action="store_true", help="run with ICA_BOOL = False (fast)"
+    )
     parser.add_argument("--data-dir", type=Path, default=None, help="ds003626 folder")
     args = parser.parse_args()
 
@@ -112,15 +118,23 @@ def main() -> int:
     data_dir = args.data_dir or project_root / "ds003626"
     published = data_dir / "derivatives"
     out_root = (
-        project_root / "results" / "checks" / ("rerun_ica" if args.ica else "rerun")
+        project_root
+        / "results"
+        / "checks"
+        / ("rerun_no_ica" if args.no_ica else "rerun")
     )
     rerun = out_root / "derivatives"
     n_s, n_b = args.subject, args.session
 
     mne.set_log_level("WARNING")
-    run_pipeline(n_s, n_b, data_dir, rerun, args.ica)
+    run_pipeline(n_s, n_b, data_dir, rerun, ica=not args.no_ica)
 
-    result = {"subject": n_s, "session": n_b, "ica": args.ica, "mne": mne.__version__}
+    result = {
+        "subject": n_s,
+        "session": n_b,
+        "ica": not args.no_ica,
+        "mne": mne.__version__,
+    }
     for kind in ("eeg-epo.fif", "exg-epo.fif", "baseline-epo.fif"):
         result[kind] = compare_epochs(
             derivative_path(rerun, n_s, n_b, kind),
@@ -136,7 +150,7 @@ def main() -> int:
         load_report(rerun, n_s, n_b), load_report(published, n_s, n_b)
     )
 
-    ica = "on" if args.ica else "off"
+    ica = "off" if args.no_ica else "on"
     print(f"\nsub-{n_s:02d} ses-{n_b:02d}, ICA {ica}, MNE {mne.__version__}")
     for key, val in result.items():
         if isinstance(val, dict):
