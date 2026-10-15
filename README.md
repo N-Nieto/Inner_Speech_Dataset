@@ -122,7 +122,10 @@ Project Folder
 │   └─ sub-01/
 │   │ ├─ ses-01/
 │   │ │     └─ eeg/
-│   │ │        └─ sub-01_ses-01_task-innerspeech_eeg.bdf
+│   │ │        ├─ sub-01_ses-01_task-innerspeech_eeg.bdf
+│   │ │        ├─ sub-01_ses-01_task-innerspeech_eeg.json       [BIDS sidecars]
+│   │ │        ├─ sub-01_ses-01_task-innerspeech_channels.tsv
+│   │ │        └─ sub-01_ses-01_task-innerspeech_events.tsv
 │   │ ├─ ses-02/...
 │   │ └─ ses-03/...
 │   ├─ sub-02/
@@ -139,6 +142,16 @@ Project Folder
 │    └─ ses-02/...
 │    └─ ses-03/...
 ```
+
+The top level also holds `dataset_description.json`, `participants.tsv`, `task-innerspeech_eeg.json` and `task-innerspeech_events.json` (event codes).
+
+### Notes on the paper and the data files
+
+- The epoch files are sampled at **256 Hz** (1024 Hz decimated by 4); the Methods section of the paper says 254 Hz.
+- EEG and EXG trials have **1153 samples** (−0.5 to 4.0 s around the cue, both ends included); the paper says 1154.
+- The protocol start event code is **11**; Table 3 of the paper says 1.
+- The `sample` column of `events.dat` counts samples of the **raw 1024 Hz** recording (first sample = 0), not of the 256 Hz epoch files. Divide by 1024 for seconds from the start of the recording; it equals `epochs.events[:, 0]` of the matching `.fif` files.
+- Since the dataset version after 2.1.2, `baseline-epo.fif` holds the 136 EEG + EXG channels (earlier versions also included the Status trigger channel), and the age of sub-05 is 30, as in Table 1 (earlier `report.pkl` files said 31).
 
 ## 5. Repository main structure
 
@@ -160,6 +173,7 @@ Project Folder
    │  ├─ TFR_representations.py                  [Power/ITC -> results/tfr]
    │  └─ Plotting/                               [ERPs, PSD, ITC and TFR topomaps -> results/figures]
    ├─ checks/                                    [Compare a local copy with the published dataset]
+   ├─ bids/                                      [Write the BIDS sidecar files of the dataset]
    ├─ pyproject.toml                             [Dependencies and tool settings]
    ├─ uv.lock                                    [Pinned versions for uv]
    └─ README.md
