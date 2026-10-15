@@ -44,6 +44,7 @@ def EMG_control_single_th(
     std_times: int | float,
     t_min_baseline: float,
     t_max_baseline: float,
+    n_jobs: int | None = None,
     verbose: bool = False,
 ) -> None:
     """
@@ -73,6 +74,8 @@ def EMG_control_single_th(
         Initial time to consider in the Baselines
     t_max_baseline : float
         Final time to consider in the Baseline
+    n_jobs : int | None, optional
+        CPU cores for filtering (-1 = all). The default is None (one core).
     tag_events : bool, optional
         Add a column in the events with the EMG control information. Useful for
         further filtering the contaminated trials.
@@ -89,167 +92,71 @@ def EMG_control_single_th(
 
     # Trials of Pronounced condition are excluded in the EMG control
     Pronounced_id = 0
+    emg_channels = ["EXG7", "EXG8"]
+    window = {"window_len": window_len, "window_step": window_step}
 
-    # In[]
-    # Subjects
     for N_S in N_Subj_arr:
-        # Blocks
         for N_B in N_block_arr:
-            # Load baseline data
+            # Baseline: EMG channels only, band-pass filtered, rectified.
+            # Filtering acts on each channel separately, so picking the two EMG
+            # channels first gives the same values while filtering 2 channels
+            # instead of all 137.
             X_baseline = mne.read_epochs(
                 derivative_path(derivatives_dir, N_S, N_B, "baseline-epo.fif"),
                 verbose="WARNING",
             )
-
-            X_baseline.filter(low_f, high_f)
-
+            X_baseline.pick(emg_channels).filter(low_f, high_f, n_jobs=n_jobs)
             FC = int(X_baseline.info["sfreq"])
-            # ========================================================================
-            # ========================================================================
-            # EXG7 Control
-            Baseline = X_baseline.copy()
-            # Select only EMG 1 channels
-            Baseline = Baseline.pick_channels(["EXG7"])
-            # Extract data
-            Channel_filter = Baseline.get_data()
-            Channel_filter = Channel_filter[0, 0, :]
-            # Rectified signal
-            Channel_filter = np.abs(Channel_filter)
-            # Calculate mean and std for channel 7
-            mean_Base_energy_7, std_Base_energy_7 = calculate_power_windowed(
-                Channel_filter,
-                FC,
-                window_len,
-                window_step,
-                t_min_baseline,
-                t_max_baseline,
-            )
-            # ========================================================================
-            # EXG7 Control
-            Baseline = X_baseline.copy()
-            Baseline.pick_channels(["EXG8"])
-            # Extract data
-            Channel_filter = Baseline.get_data()
-            Channel_filter = Channel_filter[0, 0, :]
-            # Rectified signal
-            Channel_filter = np.abs(Channel_filter)
+            baseline = np.abs(X_baseline.get_data()[0])  # (2, n_times)
+            del X_baseline
 
-            # Calculate mean and std for channel 8
-            mean_Base_energy_8, std_Base_energy_8 = calculate_power_windowed(
-                Channel_filter,
-                FC,
-                window_len,
-                window_step,
-                t_min_baseline,
-                t_max_baseline,
+            # Mean and std of the windowed power over the baseline, per channel
+            base_mean, base_std = calculate_power_windowed(
+                baseline, FC, t_min=t_min_baseline, t_max=t_max_baseline, **window
             )
-            del Baseline, X_baseline
-            # ========================================================================
-            # ========================================================================
-            # Load EOG and EMG data
+            threshold = base_mean + std_times * base_std
+
+            # Trials: same filtering and rectification
             EMG = mne.read_epochs(
                 derivative_path(derivatives_dir, N_S, N_B, "exg-epo.fif"),
                 verbose="WARNING",
             )
+            EMG.pick(emg_channels).filter(low_f, high_f, n_jobs=n_jobs)
+            trials = np.abs(EMG.get_data())  # (n_trials, 2, n_times)
+            del EMG
             Y = load_events(derivatives_dir, N_S, N_B)
 
-            # Filter in the same band
-            EMG.filter(low_f, high_f)
+            # Mean windowed power of every trial and channel, all at once
+            trial_power, _ = calculate_power_windowed(
+                trials, FC, t_min=t_min, t_max=t_max, **window
+            )  # (n_trials, 2)
 
-            # Copy data
-            EMG_EXG7 = EMG.copy()
-            EMG_EXG8 = EMG.copy()
-
-            # Select channel
-            EMG_EXG7.pick_channels(["EXG7"])
-            # Extract data
-            EMG_data_EXG7 = EMG_EXG7.get_data()
-            EMG_data_EXG7 = np.abs(EMG_data_EXG7)
-            # Select channel
-            EMG_EXG8.pick_channels(["EXG8"])
-            # Extract data
-            EMG_data_EXG8 = EMG_EXG8.get_data()
-            EMG_data_EXG8 = np.abs(EMG_data_EXG8)
-
-            # Initialize the tagging vector
-            EMG_reject = np.zeros(EMG._data.shape[0])
-            del EMG, EMG_EXG7, EMG_EXG8
-            # ========================================================================
-            # In[]: Tagging
-            # Initialization
-            drop_epoched = []
-            trial_power_7 = []
-            trial_power_8 = []
-
-            # Get number of trials
-            Trials, _, _ = EMG_data_EXG8.shape
-
-            # Calculate the threshold for annotating the trial
-            threshold_7 = mean_Base_energy_7 + (std_times * std_Base_energy_7)
-            threshold_8 = mean_Base_energy_8 + (std_times * std_Base_energy_8)
-
-            for n_trial in range(Trials):
-                # Get trial
-                Channel_filter = EMG_data_EXG7[n_trial, 0, :]
-                # Calculate power for channel EXG7
-                mean_Trial_Energy_7, _ = calculate_power_windowed(
-                    Channel_filter,
-                    FC,
-                    window_len,
-                    window_step,
-                    t_min,
-                    t_max,
-                )
-
-                # Get trial
-                Channel_filter = EMG_data_EXG8[n_trial, 0, :]
-                # Calculate power for channel EXG8
-                mean_Trial_Energy_8, _ = calculate_power_windowed(
-                    Channel_filter,
-                    FC,
-                    window_len,
-                    window_step,
-                    t_min,
-                    t_max,
-                )
-
-                # Threshold condition
-                # (marks only trials that are not of the Pronounced condition)
-                if (
-                    mean_Trial_Energy_8 > threshold_8
-                    or mean_Trial_Energy_7 > threshold_7
-                ) and Y[n_trial, 2] != Pronounced_id:
-                    trial_power_7 = np.append(trial_power_7, mean_Trial_Energy_7)
-                    trial_power_8 = np.append(trial_power_8, mean_Trial_Energy_8)
-                    drop_epoched = np.append(drop_epoched, n_trial)
-                    EMG_reject[n_trial] = 1
-
-                    if verbose:
-                        print("Warning at trial", n_trial + 1)
-
-            # In[]: Update Report
-            R_EMG = np.vstack([drop_epoched, trial_power_7, trial_power_8])
-            R_EMG = np.transpose(R_EMG)
+            # A trial is tagged when either channel exceeds its threshold,
+            # except trials of the Pronounced condition
+            tagged = (trial_power > threshold).any(axis=1) & (Y[:, 2] != Pronounced_id)
+            tagged_idx = np.flatnonzero(tagged)
+            if verbose:
+                for n_trial in tagged_idx:
+                    print("Warning at trial", n_trial + 1)
 
             print(
-                "Tagged Trials: " + str(len(R_EMG)),
+                "Tagged Trials: " + str(len(tagged_idx)),
                 "for Subject " + str(N_S) + " in Session " + str(N_B),
             )
 
             # Update Report
             report = load_report(derivatives_dir, N_S, N_B)
 
-            report["EMG_trials"] = R_EMG[:, 0]
-            report["Power_EXG7"] = R_EMG[:, 1]
-            report["Power_EXG8"] = R_EMG[:, 2]
+            report["EMG_trials"] = tagged_idx.astype(float)
+            report["Power_EXG7"] = trial_power[tagged, 0]
+            report["Power_EXG8"] = trial_power[tagged, 1]
 
-            report["Baseline_EXG7_mean"] = mean_Base_energy_7
-            report["Baseline_EXG8_mean"] = mean_Base_energy_8
+            report["Baseline_EXG7_mean"] = base_mean[0]
+            report["Baseline_EXG8_mean"] = base_mean[1]
 
-            report["Baseline_EXG7_std"] = std_Base_energy_7
-            report["Baseline_EXG8_std"] = std_Base_energy_8
+            report["Baseline_EXG7_std"] = base_std[0]
+            report["Baseline_EXG8_std"] = base_std[1]
 
-            # Save report
             save_report(report, derivatives_dir, N_S, N_B)
 
     print("EMG Control Done")
