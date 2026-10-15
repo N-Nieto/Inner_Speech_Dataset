@@ -235,7 +235,8 @@ for N_S in N_Subj_arr:
             decim=DS_RATE,
         )
 
-        # Baseline: the rest period between events 13 and 14, all channels
+        # Baseline: the rest period between events 13 and 14, EEG + EXG channels
+        # (releases up to 2.1.2 also kept the Status/trigger channel)
         t_baseline = (
             event_array[event_array[:, 2] == 14, 0]
             - event_array[event_array[:, 2] == 13, 0]
@@ -247,7 +248,9 @@ for N_S in N_Subj_arr:
             event_id=baseline_id,
             tmin=0,
             tmax=round(t_baseline),
-            picks="all",
+            picks=mne.pick_types(
+                rawdata.info, eeg=True, stim=False, include=EXG_channels
+            ),
             preload=True,
             detrend=0,
             decim=DS_RATE,
