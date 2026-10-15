@@ -17,13 +17,19 @@ Preprocessing Steps:
     2. EEG re-referencing
     3. 50 Hz notch filter (Argentina power line frequency)
     4. Bandpass filtering (low-cut and high-cut)
-    5. ICA-FIX processing using all components (computationally intensive)
-    6. Ad hoc correction for subjects who performed the tasks in another order
-    7. EMG validation using single threshold
-    8. Report generation and saving
+    5. Epoching and decimation
+    6. ICA artifact removal (computationally intensive, hours per session)
+    7. Ad hoc correction for subjects who performed the tasks in another order
+    8. EMG validation using single threshold
+    9. Report generation and saving
+
+All processing options are the variables at the top of the script; change them
+and re-run to obtain your own derivatives (save them to another folder with
+``save_dir`` to keep the published ones).
 """
 
 # Imports modules
+import gc
 from pathlib import Path
 
 import mne
@@ -93,6 +99,11 @@ MAX_PCA_COMPONENTS = None
 RANDOM_STATE = 23
 fit_params = {"extended": True}
 
+# #################### Parallel processing
+# CPU cores used for filtering (-1 = all cores, 1 = a single core).
+# The results do not depend on this value.
+N_JOBS = -1
+
 # #################### EMG Control
 EMG_FILTER_LOW_CUT = 1
 EMG_FILTER_HIGH_CUT = 20
@@ -154,6 +165,9 @@ Blinks_channels = ["EXG5", "EXG6"]
 # Mouth Moving detection
 Mouth_channels = ["EXG7", "EXG8"]
 
+# All external channels
+EXG_channels = Ref_channels + Gaze_channels + Blinks_channels + Mouth_channels
+
 # %%
 # ------------------ Processing loop ------------------
 
@@ -179,8 +193,6 @@ for N_S in N_Subj_arr:
 
         event_array = events.to_numpy()
         event_array = np.array(event_array, dtype=int)
-        # replace the raw events with the new corrected events
-        rawdata.event = event_array
 
         report["Recording_time"] = int(
             np.round(rawdata.last_samp / rawdata.info["sfreq"])
@@ -194,45 +206,36 @@ for N_S in N_Subj_arr:
         rawdata.set_eeg_reference(ref_channels=Ref_channels)
         if NOTCH_BOOL:
             # Notch filter
-            rawdata = mne.io.Raw.notch_filter(rawdata, freqs=50)
+            rawdata.notch_filter(freqs=50, n_jobs=N_JOBS)
 
         if FILTER_BOOL:
             # Filtering raw data
-            rawdata.filter(LOW_CUT, HIGH_CUT)
+            rawdata.filter(LOW_CUT, HIGH_CUT, n_jobs=N_JOBS)
         # %%
         # Save report (also creates the session folder)
         save_report(report, save_dir, N_S, N_B)
 
-        print("Processing EXG")
-        # EXG
-        #  the EXG Channels for saving
-        picks_eog = mne.pick_types(
-            rawdata.info,
-            eeg=False,
-            stim=False,
-            include=["EXG1", "EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"],
-        )
-        epochsEOG = mne.Epochs(
+        # %%
+        print("Epoching")
+        # Every epoch set is cut from the continuous data here, so the
+        # recording can be released before the (slow) ICA.
+
+        # EXG: baseline-corrected with the 0.5 s before the cue. The correction
+        # is applied at the original sampling rate, before decimating, so these
+        # trials are cut separately from the EEG ones (8 channels, cheap).
+        epochsEXG = mne.Epochs(
             rawdata,
             event_array,
             event_id=event_id,
             tmin=-0.5,
             tmax=4,
-            picks=picks_eog,
+            picks=EXG_channels,
             preload=True,
             detrend=0,
             decim=DS_RATE,
         )
 
-        # Save EOG
-        file_name = derivative_path(save_dir, N_S, N_B, "exg-epo.fif")
-        epochsEOG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
-        del epochsEOG
-        print("EXG Saved")
-        print("Processing Baseline")
-        # Baseline
-        # Extract Baseline
-        # Calculate the Baseline time
+        # Baseline: the rest period between events 13 and 14, all channels
         t_baseline = (
             event_array[event_array[:, 2] == 14, 0]
             - event_array[event_array[:, 2] == 13, 0]
@@ -251,68 +254,50 @@ for N_S in N_Subj_arr:
             baseline=None,
         )
 
-        # Save Baseline
-        file_name = derivative_path(save_dir, N_S, N_B, "baseline-epo.fif")
-        Baseline.save(file_name, fmt="double", split_size="2GB", overwrite=True)
-        del Baseline
-        print("Baseline Saved")
-        print("Processing EEG")
-        # Epoching and decimating EEG
-        picks_eeg = mne.pick_types(
-            rawdata.info,
-            eeg=True,
-            exclude=["EXG1", "EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"],
-            stim=False,
-        )
-
-        epochsEEG = mne.Epochs(
+        # EEG and EXG trials, cut and decimated once, without baseline
+        # correction. The EEG derivative is taken from these trials; ICA also
+        # uses the EXG channels to find the artifact components.
+        epochsAll = mne.Epochs(
             rawdata,
             event_array,
             event_id=event_id,
             tmin=-0.5,
             tmax=4,
-            picks=picks_eeg,
+            picks=mne.pick_types(
+                rawdata.info, eeg=True, stim=False, include=EXG_channels
+            ),
             preload=True,
             detrend=0,
             decim=DS_RATE,
             baseline=None,
         )
 
+        # The continuous recording is no longer needed: free its memory
+        del rawdata
+        gc.collect()
+
+        # Save EXG and Baseline
+        epochsEXG.save(
+            derivative_path(save_dir, N_S, N_B, "exg-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        Baseline.save(
+            derivative_path(save_dir, N_S, N_B, "baseline-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        del epochsEXG, Baseline
+        print("EXG and Baseline saved")
+
+        # EEG: the trials above without the EXG channels
+        print("Processing EEG")
+        epochsEEG = epochsAll.copy().drop_channels(EXG_channels)
+
         # ICA Processing
-
         if ICA_BOOL:
-            # Get a full trials including EXG channels
-            picks_vir = mne.pick_types(
-                rawdata.info,
-                eeg=True,
-                include=[
-                    "EXG1",
-                    "EXG2",
-                    "EXG3",
-                    "EXG4",
-                    "EXG5",
-                    "EXG6",
-                    "EXG7",
-                    "EXG8",
-                ],
-                stim=False,
-            )
-            epochsEEG_full = mne.Epochs(
-                rawdata,
-                event_array,
-                event_id=event_id,
-                tmin=-0.5,
-                tmax=4,
-                picks=picks_vir,
-                preload=True,
-                detrend=0,
-                decim=DS_RATE,
-                baseline=None,
-            )
-
-            # Liberate Memory for ICA processing
-            del rawdata
-
             # Creating the ICA object
             ica = mne.preprocessing.ICA(
                 n_components=ICA_COMPONENTS,
@@ -323,50 +308,27 @@ for N_S in N_Subj_arr:
 
             # Fit ICA, calculate components
             ica.fit(epochsEEG)
+
+            # Components correlated with the gaze, blink and mouth channels
             ica.exclude = []
-
-            # Detect sources by correlation
-            exg_inds_EXG3, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG3"
-            )
-            ica.exclude.extend(exg_inds_EXG3)
-
-            # Detect sources by correlation
-            exg_inds_EXG4, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG4"
-            )
-            ica.exclude.extend(exg_inds_EXG4)
-
-            # Detect sources by correlation
-            exg_inds_EXG5, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG5"
-            )
-            ica.exclude.extend(exg_inds_EXG5)
-
-            # Detect sources by correlation
-            exg_inds_EXG6, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG6"
-            )
-            ica.exclude.extend(exg_inds_EXG6)
-
-            # Detect sources by correlation
-            exg_inds_EXG7, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG7"
-            )
-            ica.exclude.extend(exg_inds_EXG7)
-
-            # Detect sources by correlation
-            exg_inds_EXG8, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG8"
-            )
-            ica.exclude.extend(exg_inds_EXG8)
+            for ch_name in Gaze_channels + Blinks_channels + Mouth_channels:
+                exg_inds, _ = ica.find_bads_eog(epochsAll, ch_name=ch_name)
+                ica.exclude.extend(exg_inds)
 
             print("Applying ICA")
             ica.apply(epochsEEG)
+            del ica
+        del epochsAll
 
         # Save EEG
-        file_name = derivative_path(save_dir, N_S, N_B, "eeg-epo.fif")
-        epochsEEG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
+        epochsEEG.save(
+            derivative_path(save_dir, N_S, N_B, "eeg-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        del epochsEEG
+        gc.collect()
 
         # Standardize and save events
         events = add_condition_tag(events)
@@ -395,6 +357,7 @@ EMG_control_single_th(
     std_times=STD_TIMES,
     t_min_baseline=T_MIN_BASELINE,
     t_max_baseline=T_MAX_BASELINE,
+    n_jobs=N_JOBS,
 )
 
 # %%
