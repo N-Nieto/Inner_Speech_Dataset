@@ -2,7 +2,8 @@
 Check a local copy of OpenNeuro ds003626 against the published version.
 
 1. Integrity: size and MD5 of every file against the OpenNeuro checksums
-   (``ds003626_2.1.2_manifest.json``, taken from the dataset's git-annex keys).
+   (``ds003626_<version>_manifest.json``, from the dataset's git-annex keys;
+   the newest version is used unless ``--manifest`` is given).
 2. Events: rebuild ``events.dat`` and the report fields that come from the
    events (recording time, right/wrong answers) from each raw ``.bdf`` file
    with the current code and compare them with the published derivatives.
@@ -31,6 +32,7 @@ from pathlib import Path
 
 import mne
 import numpy as np
+from packaging.version import Version
 
 from innerspeech.adhoc_modification import _CONDITION_COL, _SUB03_SES01_ROWS
 from innerspeech.data_extractions import get_events_from_raw
@@ -51,6 +53,12 @@ SUBJECTS = list(range(1, 11))
 SESSIONS = [1, 2, 3]
 EVENT_CODES = {31: 0, 32: 1, 33: 2, 34: 3}
 EXG_CHANNELS = [f"EXG{i}" for i in range(1, 9)]
+
+
+def newest_manifest() -> Path:
+    """The manifest of the most recent dataset version in this folder."""
+    manifests = HERE.glob("ds003626_*_manifest.json")
+    return max(manifests, key=lambda p: Version(p.name.split("_")[1]))
 
 
 def md5sum(path: Path, chunk: int = 1 << 24) -> str:
@@ -179,7 +187,12 @@ def check_epochs(deriv: Path, subjects: list, sessions: list) -> list[dict]:
                 )
                 continue
             stem = deriv / f"sub-{n_s:02d}/ses-{n_b:02d}/sub-{n_s:02d}_ses-{n_b:02d}"
-            for kind, n_ch in (("eeg", 128), ("exg", 8), ("baseline", 137)):
+            # Baselines have 136 channels (137 with Status up to version 2.1.2)
+            for kind, n_ch in (
+                ("eeg", (128,)),
+                ("exg", (8,)),
+                ("baseline", (136, 137)),
+            ):
                 try:
                     ep = mne.read_epochs(
                         f"{stem}_{kind}-epo.fif", preload=True, verbose="ERROR"
@@ -189,7 +202,7 @@ def check_epochs(deriv: Path, subjects: list, sessions: list) -> list[dict]:
                         f"{kind}-epo.fif unreadable: {type(err).__name__}"
                     )
                     continue
-                if len(ep.ch_names) != n_ch:
+                if len(ep.ch_names) not in n_ch:
                     row["problems"].append(f"{kind}: {len(ep.ch_names)} channels")
                 if ep.info["sfreq"] != 256:
                     row["problems"].append(f"{kind}: sfreq {ep.info['sfreq']}")
@@ -217,9 +230,7 @@ def check_epochs(deriv: Path, subjects: list, sessions: list) -> list[dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--data-dir", type=Path, default=None, help="ds003626 folder")
-    parser.add_argument(
-        "--manifest", type=Path, default=HERE / "ds003626_2.1.2_manifest.json"
-    )
+    parser.add_argument("--manifest", type=Path, default=newest_manifest())
     parser.add_argument("--subjects", type=int, nargs="+", default=SUBJECTS)
     parser.add_argument("--sessions", type=int, nargs="+", default=SESSIONS)
     parser.add_argument("--skip-md5", action="store_true", help="compare sizes only")
