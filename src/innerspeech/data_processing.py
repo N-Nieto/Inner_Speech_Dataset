@@ -18,53 +18,53 @@ def calculate_power_windowed(
     t_max: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Calculate power in a windowed manner for a given signal.
+    Mean and standard deviation of the power in sliding windows.
+
+    The power of a window is ``sum(x**2) / n_samples``. Windows of
+    ``window_len`` seconds start at ``t_min`` and move by ``window_step``
+    seconds; they continue while the previous window ended at or before
+    ``t_max``, so the last window may reach past ``t_max`` (it is cut at the
+    end of the signal). All windows are computed at once.
 
     Parameters:
-    - signal_data (np.ndarray): The input signal data.
+    - signal_data (np.ndarray): Signal with time on the last axis, e.g. one
+      channel ``(n_times,)`` or one channel of many trials ``(n_trials, n_times)``.
     - fc (int): Sampling frequency of the signal.
     - window_len (float): Length of the window in seconds.
     - window_step (float): Step size between windows in seconds.
-    - t_min (float): Minimum time for cropping the signal.
-    - t_max (float): Maximum time for cropping the signal.
+    - t_min (float): Start of the first window, in seconds from the first sample.
+    - t_max (float): Windows start while the previous one ended at or before
+      this time (seconds).
 
     Returns:
-    - tuple: A tuple containing the mean power
-             and standard deviation of the power.
+    - tuple: Mean and standard deviation of the window powers, with the shape
+      of ``signal_data`` without its last axis (scalars for a 1-D signal).
     """
-    # Signal crop in time
-    initial_sample = round(t_min * fc)
-    last_sample = round(t_max * fc)
+    signal_data = np.asarray(signal_data)
+    n_times = signal_data.shape[-1]
+    first = round(t_min * fc)
+    last = round(t_max * fc)
+    length = round(fc * window_len)
+    step = round(fc * window_step)
 
-    # Window parameters
-    fc_window_len = round(fc * window_len)
-    fc_window_step = round(fc * window_step)
+    # Windows that end at or before ``last``, plus the one after them
+    n_inside = (last - first - length) // step + 1 if last - first >= length else 0
+    starts = first + step * np.arange(n_inside + 1)
+    ends = np.minimum(starts + length, n_times)
 
-    # Initializations
-    power = []
-    final_sample = 0
-    n_vent = 0
+    squared = signal_data**2
+    power = np.empty((*signal_data.shape[:-1], len(starts)))
+    full = ends - starts == length
+    if full.any():
+        # (..., n_windows, length) copy of the full windows, summed along time
+        windows = np.lib.stride_tricks.sliding_window_view(squared, length, axis=-1)
+        power[..., full] = windows[..., starts[full], :].sum(axis=-1) / length
+    for k in np.flatnonzero(~full):  # windows cut at the end of the signal
+        power[..., k] = squared[..., starts[k] : ends[k]].sum(axis=-1) / (
+            ends[k] - starts[k]
+        )
 
-    # Main loop
-    while final_sample <= last_sample:
-        final_sample = initial_sample + fc_window_len
-
-        # Window signal
-        signal_cut = signal_data[initial_sample:final_sample]
-
-        # Calculate the energy of the window signal
-        pwr = np.sum(signal_cut**2, axis=0) / signal_cut.size
-
-        # Update new initial sample for the next window
-        initial_sample = initial_sample + fc_window_step
-
-        power.append(pwr)
-        n_vent += 1
-
-    m_power = np.mean(power, axis=0)
-    std_power = np.std(power, axis=0)
-
-    return m_power, std_power
+    return power.mean(axis=-1), power.std(axis=-1)
 
 
 def select_time_window(
