@@ -190,7 +190,7 @@ def extract_condition_epochs(
     Parameters:
     - root_dir (Path): The ``ds003626`` folder (containing ``derivatives``).
     - subjects (list of int): Subject numbers.
-    - datatype (str): "eeg", "exg" or "baseline".
+    - datatype (str): "eeg" or "exg" (the baseline files hold no trials).
     - condition (str): "all", "pron", "inner" or "vis" (aliases accepted).
     - class_label (str): "all", "up", "down", "right" or "left".
     - montage (str or None): Standard montage to attach (EEG only).
@@ -202,6 +202,11 @@ def extract_condition_epochs(
     """
     if not subjects:
         raise ValueError("Select at least one subject.")
+    if datatype.lower() not in ("eeg", "exg"):
+        raise ValueError(
+            f"datatype must be 'eeg' or 'exg', not {datatype!r}; the baseline files "
+            "hold no trials (read them with extract_block_data_from_subject)."
+        )
 
     template = mne.read_epochs(
         _epochs_path(root_dir, subjects[0], 1, datatype),
@@ -212,22 +217,37 @@ def extract_condition_epochs(
     if montage is not None and datatype.lower() == "eeg":
         info.set_montage(montage, on_missing="ignore")
 
-    data, labels, subject_ids = [], [], []
+    # Select the trials of every session from the events files first, then
+    # read only those trials into one preallocated array: memory holds the
+    # requested condition and class only, once.
+    selection = []  # (subject, session, trial indices, events of those trials)
     for n_s in subjects:
-        X, Y = extract_data_from_subject(root_dir, n_s, datatype)
-        X, Y = filter_by_condition(X, Y, condition)
-        X, Y = filter_by_class(X, Y, class_label)
-        data.append(X)
-        labels.append(Y)
-        subject_ids.append(np.full(len(Y), n_s))
-
-    data = np.concatenate(data)
-    labels = np.concatenate(labels).astype(int)
-    if len(data) == 0:
+        for n_b in (1, 2, 3):
+            Y = load_events(root_dir, n_s, n_b)
+            index, Y = filter_by_condition(np.arange(len(Y)), Y, condition)
+            index, Y = filter_by_class(index, Y, class_label)
+            if len(index):
+                selection.append((n_s, n_b, index, Y))
+    n_trials = sum(len(index) for _, _, index, _ in selection)
+    if n_trials == 0:
         raise ValueError(
             f"No trials for condition={condition!r}, class={class_label!r} "
             f"in subjects {subjects}."
         )
+
+    data = np.empty((n_trials, len(info["ch_names"]), len(template.times)))
+    start = 0
+    for n_s, n_b, index, _ in selection:
+        epochs = mne.read_epochs(
+            _epochs_path(root_dir, n_s, n_b, datatype),
+            preload=False,
+            verbose="WARNING",
+        )
+        data[start : start + len(index)] = epochs[index].get_data()
+        start += len(index)
+        del epochs
+    labels = np.concatenate([Y for _, _, _, Y in selection]).astype(int)
+    subject_ids = [np.full(len(index), n_s) for n_s, _, index, _ in selection]
 
     class_names = ("up", "down", "right", "left")
     events = np.column_stack(

@@ -57,9 +57,9 @@ fmin = 0.5
 fmax = 100
 n_steps = 300
 return_itc = True
-use_fft = False
+use_fft = True  # same result as the direct convolution, about 4x faster
 decim = 1
-n_jobs = 1
+n_jobs = -1  # CPU cores (-1 = all); the result does not depend on it
 picks = "all"
 
 freqs = np.logspace(*np.log10([fmin, fmax]), num=n_steps)
