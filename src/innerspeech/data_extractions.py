@@ -360,7 +360,7 @@ def get_age_gender(N_S: int) -> tuple[int, str]:
     Retrieve the age and gender of a subject based on their subject number.
 
     Demographic information
-    Subject_age = [56, 50, 34, 24, 31, 29, 26, 28, 35, 31];
+    Subject_age = [56, 50, 34, 24, 30, 29, 26, 28, 35, 31];
     Subject_gender = ["F", "M", "M", "F", "F", "M", "M", "F", "M", "M"]
 
     Parameters:
@@ -370,7 +370,8 @@ def get_age_gender(N_S: int) -> tuple[int, str]:
     - tuple: A tuple containing the age (int) and gender (str) of the subject.
     """
     # Fixed demographic information
-    Subject_age = [56, 50, 34, 24, 31, 29, 26, 28, 35, 31]
+    # Table 1 of the paper (sub-05 is 30; releases up to 2.1.2 stored 31)
+    Subject_age = [56, 50, 34, 24, 30, 29, 26, 28, 35, 31]
     Subject_gender = ["F", "M", "M", "F", "F", "M", "M", "F", "M", "M"]
     # Retrieve age and gender for the corresponding subject number
     age = Subject_age[N_S - 1]

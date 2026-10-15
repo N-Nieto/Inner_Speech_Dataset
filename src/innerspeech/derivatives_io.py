@@ -10,6 +10,10 @@ Formats (as published on OpenNeuro, ds003626):
 
 - ``events.dat``: integer array of shape ``(n_trials, 4)`` with the columns
   ``[sample, class, condition, session]`` (Table 5 of Nieto et al., 2022).
+  ``sample`` is the cue onset as a sample number of the raw recording
+  (1024 Hz, first sample = 0), not of the 256 Hz epoch files; divide by 1024
+  for seconds from the start of the recording. It equals ``epochs.events[:, 0]``
+  of the matching ``*-epo.fif`` files.
   The published files are NumPy pickles; new files are written in NumPy's
   ``.npy`` container (no pickle). Both are read by
   ``np.load(path, allow_pickle=True)``, the loader used since the original
@@ -26,8 +30,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# Column order of the events file (Table 5 of the paper)
+# Column order of the events file (Table 5 of the paper). "sample" counts
+# samples of the raw 1024 Hz recording (see the module docstring).
 EVENTS_COLUMNS = ("sample", "class", "condition", "session")
+
+# Sampling rate of the raw recordings, the unit of the "sample" column
+RAW_SFREQ = 1024
 
 # Columns of the events DataFrame built by InnerSpeech_preprocessing.py
 _PIPELINE_COLUMNS = ("Time", "Code", "condition", "block")
