@@ -83,7 +83,7 @@ If you prefer to use a already preprocessed data, you can partially or fully dow
 
 The script allows to flexible download only parts of the data, subjects or sessions.
 
-> **Note:** The published derivatives were made with ICA artifact removal, as described in the paper (`ICA_BOOL = True` in `InnerSpeech_preprocessing.py`). The script's default is `ICA_BOOL = False`, so running it unchanged gives EEG files without ICA (the other files do not depend on ICA).
+> **Note:** The published derivatives were made with the script's default settings, including ICA artifact removal as described in the paper (`ICA_BOOL = True`). ICA takes hours per session, which is why the derivatives are published. To make your own version, change the variables at the top of `InnerSpeech_preprocessing.py` (filters, decimation, ICA, EMG threshold, `N_JOBS` for the number of CPU cores) and set `save_dir` to a new folder so the published files are kept.
 
 ## Checking your copy
 
@@ -91,7 +91,8 @@ Two scripts in `checks/` compare a local copy of the dataset with the published 
 
 ```bash
 python checks/verify_dataset.py                          # checksums, events rebuilt from raw, epochs files
-python checks/reproduce_session.py --subject 8 --session 3   # re-run the preprocessing for one session and compare
+python checks/reproduce_session.py --subject 8 --session 3 --no-ica   # re-run one session without ICA (minutes) and compare;
+                                                                      # drop --no-ica for the full run (hours)
 ```
 
 `verify_dataset.py` checks every file against the OpenNeuro checksums of version 2.1.2 and reports which files to download again. Add `--skip-md5` for a quick size-only check. Results are saved in `results/checks/`.

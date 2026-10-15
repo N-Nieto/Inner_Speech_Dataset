@@ -14,6 +14,7 @@ dependencies = [
     "scipy>=1.10",
     "matplotlib>=3.7",
     "h5io>=0.2",         # saving/reading PSD and TFR results (.h5)
+    "joblib>=1.3",       # parallel filtering (N_JOBS in InnerSpeech_preprocessing.py)
 ]
 
 [project.optional-dependencies]
