@@ -1,22 +1,15 @@
 """
-Created on Thu Mar 26 16:37:48 2020
+EMG control: tag trials with mouth movements (single threshold method).
+
+The mouth channels EXG7 and EXG8 are band-pass filtered and rectified. The
+power in sliding windows over the session's baseline gives, per channel, a
+threshold ``mean + std_times * std``. A trial is tagged when the mean windowed
+power of either channel in the action interval exceeds its threshold; trials
+of the pronounced speech condition are never tagged (Nieto et al., 2022).
 
 @author: Nicolás Nieto
-
-Description:
-    This code automatically tags trials by EMG artifacts
-
-TODO:
-    Add a column in the events with the EMG control information. Useful for
-    further filtering the contaminated trials.
-    Add 0 if the trial is not contaminated
-    Add 1 if the trial is  contaminated
-    The default is False.
-verbose : bool, optional
-    The default is False.
 """
 
-# Imports
 from pathlib import Path
 
 import mne
@@ -25,10 +18,97 @@ import numpy as np
 from innerspeech.data_processing import calculate_power_windowed
 from innerspeech.derivatives_io import (
     derivative_path,
-    load_events,
+    load_events_table,
     load_report,
+    save_events,
     save_report,
 )
+
+EMG_CHANNELS = ["EXG7", "EXG8"]
+PRONOUNCED = 0  # condition number of pronounced speech
+
+
+def emg_control_session(
+    derivatives_dir: Path,
+    n_s: int,
+    n_b: int,
+    low_f: float,
+    high_f: float,
+    t_min: float,
+    t_max: float,
+    window_len: float,
+    window_step: float,
+    std_times: float,
+    t_min_baseline: float,
+    t_max_baseline: float,
+    n_jobs: int | None = None,
+) -> dict:
+    """
+    EMG control of one session, without writing anything.
+
+    Parameters
+    ----------
+    derivatives_dir : Path
+        The ``derivatives`` folder (``exg-epo.fif``, ``baseline-epo.fif`` and
+        the events of the session are read).
+    n_s, n_b : int
+        Subject and session numbers.
+    low_f, high_f : float
+        Band-pass filter of the mouth channels (Hz).
+    t_min, t_max : float
+        Window of the trials, in seconds from the first sample of the epoch.
+    window_len, window_step : float
+        Length and step of the sliding windows (s).
+    std_times : float
+        Standard deviations above the baseline mean for the threshold.
+    t_min_baseline, t_max_baseline : float
+        Window of the baseline (s from its first sample).
+    n_jobs : int or None
+        CPU cores for filtering (-1 = all).
+
+    Returns
+    -------
+    dict
+        ``power``: ``(n_trials, 2)`` mean power of EXG7 and EXG8 per trial;
+        ``tagged``: boolean ``(n_trials,)``; ``baseline_mean`` and
+        ``baseline_std``: per channel; ``threshold``: per channel.
+    """
+    window = {"window_len": window_len, "window_step": window_step}
+
+    # Filtering acts on each channel separately, so picking the two mouth
+    # channels first gives the same values as filtering every channel.
+    baseline = mne.read_epochs(
+        derivative_path(derivatives_dir, n_s, n_b, "baseline-epo.fif"),
+        verbose="WARNING",
+    )
+    baseline.pick(EMG_CHANNELS).filter(low_f, high_f, n_jobs=n_jobs, verbose="WARNING")
+    sfreq = int(baseline.info["sfreq"])
+    base_mean, base_std = calculate_power_windowed(
+        np.abs(baseline.get_data()[0]),
+        sfreq,
+        t_min=t_min_baseline,
+        t_max=t_max_baseline,
+        **window,
+    )
+    threshold = base_mean + std_times * base_std
+
+    trials = mne.read_epochs(
+        derivative_path(derivatives_dir, n_s, n_b, "exg-epo.fif"), verbose="WARNING"
+    )
+    trials.pick(EMG_CHANNELS).filter(low_f, high_f, n_jobs=n_jobs, verbose="WARNING")
+    power, _ = calculate_power_windowed(
+        np.abs(trials.get_data()), sfreq, t_min=t_min, t_max=t_max, **window
+    )  # (n_trials, 2)
+
+    condition = load_events_table(derivatives_dir, n_s, n_b)["condition"].to_numpy()
+    tagged = (power > threshold).any(axis=1) & (condition != PRONOUNCED)
+    return {
+        "power": power,
+        "tagged": tagged,
+        "baseline_mean": base_mean,
+        "baseline_std": base_std,
+        "threshold": threshold,
+    }
 
 
 def EMG_control_single_th(
@@ -41,122 +121,76 @@ def EMG_control_single_th(
     t_max: float,
     window_len: float,
     window_step: float,
-    std_times: int | float,
+    std_times: float,
     t_min_baseline: float,
     t_max_baseline: float,
     n_jobs: int | None = None,
+    legacy: bool = True,
     verbose: bool = False,
 ) -> None:
     """
+    Run the EMG control and store its results with the derivatives.
+
+    For every session, the trial table (``events.tsv``) gets the columns
+    ``emg_power_exg7``, ``emg_power_exg8`` and ``emg_tagged``, and the report
+    the keys ``EMG_trials``, ``Power_EXG7``, ``Power_EXG8`` (tagged trials)
+    and ``Baseline_EXG7_mean``, ``Baseline_EXG8_mean``, ``Baseline_EXG7_std``,
+    ``Baseline_EXG8_std``.
+
     Parameters
     ----------
     derivatives_dir : Path
-        The ``derivatives`` folder written by the pipeline (read and updated)
-    N_Subj_arr : list
-        array with subjects to perform the control
-    N_block_arr : list
-        array with block to perform the control
-    low_f : float
-        Low Frequency cut-off.
-    high_f : float
-        High Frequency cut-off.
-    t_min : float
-        Initial time to consider in the trials
-    t_max : float
-        Final time to consider in the trials
-    window_len : float
-        window length considered in the analysis.
-    window_step : float
-        step time the window moves.
-    std_times : int | float
-        Number of standard deviations added to the mean in the threshold method.
-    t_min_baseline : float
-        Initial time to consider in the Baselines
-    t_max_baseline : float
-        Final time to consider in the Baseline
-    n_jobs : int | None, optional
-        CPU cores for filtering (-1 = all). The default is None (one core).
-    tag_events : bool, optional
-        Add a column in the events with the EMG control information. Useful for
-        further filtering the contaminated trials.
-        Add 0 if the trial is not contaminated
-        Add 1 if the trial is contaminated
-        The default is False.
-    verbose : bool, optional
-        The default is False.
-
-    Returns
-    -------
-    None
+        The ``derivatives`` folder written by the pipeline (read and updated).
+    N_Subj_arr, N_block_arr : list of int
+        Subjects and sessions to process.
+    low_f, high_f, t_min, t_max, window_len, window_step, std_times, \
+t_min_baseline, t_max_baseline, n_jobs
+        See :func:`emg_control_session`.
+    legacy : bool
+        Also update ``report.pkl``.
+    verbose : bool
+        Print the tagged trials.
     """
-
-    # Trials of Pronounced condition are excluded in the EMG control
-    Pronounced_id = 0
-    emg_channels = ["EXG7", "EXG8"]
-    window = {"window_len": window_len, "window_step": window_step}
-
-    for N_S in N_Subj_arr:
-        for N_B in N_block_arr:
-            # Baseline: EMG channels only, band-pass filtered, rectified.
-            # Filtering acts on each channel separately, so picking the two EMG
-            # channels first gives the same values while filtering 2 channels
-            # instead of all 137.
-            X_baseline = mne.read_epochs(
-                derivative_path(derivatives_dir, N_S, N_B, "baseline-epo.fif"),
-                verbose="WARNING",
+    for n_s in N_Subj_arr:
+        for n_b in N_block_arr:
+            result = emg_control_session(
+                derivatives_dir,
+                n_s,
+                n_b,
+                low_f=low_f,
+                high_f=high_f,
+                t_min=t_min,
+                t_max=t_max,
+                window_len=window_len,
+                window_step=window_step,
+                std_times=std_times,
+                t_min_baseline=t_min_baseline,
+                t_max_baseline=t_max_baseline,
+                n_jobs=n_jobs,
             )
-            X_baseline.pick(emg_channels).filter(low_f, high_f, n_jobs=n_jobs)
-            FC = int(X_baseline.info["sfreq"])
-            baseline = np.abs(X_baseline.get_data()[0])  # (2, n_times)
-            del X_baseline
-
-            # Mean and std of the windowed power over the baseline, per channel
-            base_mean, base_std = calculate_power_windowed(
-                baseline, FC, t_min=t_min_baseline, t_max=t_max_baseline, **window
-            )
-            threshold = base_mean + std_times * base_std
-
-            # Trials: same filtering and rectification
-            EMG = mne.read_epochs(
-                derivative_path(derivatives_dir, N_S, N_B, "exg-epo.fif"),
-                verbose="WARNING",
-            )
-            EMG.pick(emg_channels).filter(low_f, high_f, n_jobs=n_jobs)
-            trials = np.abs(EMG.get_data())  # (n_trials, 2, n_times)
-            del EMG
-            Y = load_events(derivatives_dir, N_S, N_B)
-
-            # Mean windowed power of every trial and channel, all at once
-            trial_power, _ = calculate_power_windowed(
-                trials, FC, t_min=t_min, t_max=t_max, **window
-            )  # (n_trials, 2)
-
-            # A trial is tagged when either channel exceeds its threshold,
-            # except trials of the Pronounced condition
-            tagged = (trial_power > threshold).any(axis=1) & (Y[:, 2] != Pronounced_id)
+            power, tagged = result["power"], result["tagged"]
             tagged_idx = np.flatnonzero(tagged)
             if verbose:
                 for n_trial in tagged_idx:
                     print("Warning at trial", n_trial + 1)
-
             print(
-                "Tagged Trials: " + str(len(tagged_idx)),
-                "for Subject " + str(N_S) + " in Session " + str(N_B),
+                f"Tagged Trials: {len(tagged_idx)} for Subject {n_s} in Session {n_b}"
             )
 
-            # Update Report
-            report = load_report(derivatives_dir, N_S, N_B)
+            table = load_events_table(derivatives_dir, n_s, n_b)
+            table["emg_power_exg7"] = power[:, 0]
+            table["emg_power_exg8"] = power[:, 1]
+            table["emg_tagged"] = tagged
+            save_events(table, derivatives_dir, n_s, n_b, legacy=False)
 
+            report = load_report(derivatives_dir, n_s, n_b)
             report["EMG_trials"] = tagged_idx.astype(float)
-            report["Power_EXG7"] = trial_power[tagged, 0]
-            report["Power_EXG8"] = trial_power[tagged, 1]
-
-            report["Baseline_EXG7_mean"] = base_mean[0]
-            report["Baseline_EXG8_mean"] = base_mean[1]
-
-            report["Baseline_EXG7_std"] = base_std[0]
-            report["Baseline_EXG8_std"] = base_std[1]
-
-            save_report(report, derivatives_dir, N_S, N_B)
+            report["Power_EXG7"] = power[tagged, 0]
+            report["Power_EXG8"] = power[tagged, 1]
+            report["Baseline_EXG7_mean"] = result["baseline_mean"][0]
+            report["Baseline_EXG8_mean"] = result["baseline_mean"][1]
+            report["Baseline_EXG7_std"] = result["baseline_std"][0]
+            report["Baseline_EXG8_std"] = result["baseline_std"][1]
+            save_report(report, derivatives_dir, n_s, n_b, legacy=legacy)
 
     print("EMG Control Done")

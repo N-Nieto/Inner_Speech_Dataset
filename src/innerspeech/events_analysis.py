@@ -1,736 +1,467 @@
 """
-Created on Wed Oct 16 15:18:45 2019
-Last Update: 09/06/2022
+Check and correct the events of a session, and derive the trial table.
 
-@author: Nieto Nicolás
-@email: nnieto@sinc.unl.edu.ar
+The correction compares the recorded trigger sequence with the sequence the
+stimulation protocol allows (:mod:`innerspeech.protocol`). Every recorded event
+is either accepted, or dropped as out of sequence; missing events are inserted
+where the protocol requires them. The combination with the fewest changes is
+found for the whole session at once (dynamic programming), so several missing
+events in a row, extra triggers and recordings with or without the initial
+spurious trigger are handled the same way.
+
+Typical use (``process_session_events`` runs these steps, with the
+per-session exceptions of :data:`innerspeech.protocol.KNOWN_ISSUES`)::
+
+    events = get_events_from_raw(raw, n_s, n_b)  # Time, Trigger, Code
+    events = event_correction(events)  # + "inferred" column
+    right, wrong = cognitive_control_check(events)
+    trials = trial_table(events, session=n_b, condition_override=...)
+
+``event_correction`` lists what it changed in ``events.attrs["corrections"]``.
 """
 
-import mne
+from __future__ import annotations
+
+import logging
+
 import numpy as np
 import pandas as pd
 
 from innerspeech.exceptions import EventSequenceError
+from innerspeech.protocol import INNER_SPEECH, KNOWN_ISSUES, Protocol
 
-# Constants for better readability and maintainability
-EVENT_CODES = {
-    # Protocol start (NOTE THAT IN TABLE 3 OF THE PAPER, THERE IS A TYPO AND 1 IS
-    # MENTIONED AS STARTING TAG, INSTEAD OF 11), Baseline start, run start
-    "STARTS": [11, 13],
-    "ENDS": [12, 14],  # Protocol end, Baseline end, run end
-    "RUN_START": [15],  # Run start
-    "RUN_END": [16],  # Run end
-    "INTER_RUN_REST": [51],  # Inter-run rest
-    "BLOCKS": [21, 22, 23],  # Pron, Im, Vis blocks start
-    "TAGS": [31, 32, 33, 34],  # Trial tags
-    "MARKS": [42, 44, 45, 46],  # Concentration, Action, Relax, Rest intervals
-    "QUESTIONS": [17],  # Cognitive control question
-    "ANSWERS": [61, 62, 63, 64],  # Cognitive control answers
-    # Tag to be excluded from analysis (caused by trigger overflow in Biosemi systems)
-    "EXCLUDE": 65536,
-}
+logger = logging.getLogger(__name__)
 
-# CHECK TIMING
-TIME_OFFSETS = {
-    42: 1945,  # Concentration mark
-    44: 2594,  # Action interval
-    45: 1075,  # Concentration interval
-    46: 1075,  # Rest interval
-    17: 2092,  # Question
-    "ANSWERS": 2092,  # Answer
-    "TAG": 563,  # For tags 31-34
-}
-
-EXPECTED_TRANSITIONS = {
-    42: [31, 32, 33, 34],  # Concentration (Start) mark -> Tags interval
-    # (31, 32, 33, 34): 44,
-    46: [42, 16, 17],  # Rest interval -> Start new trial, end of run, Question pose
-    17: [61, 62, 63, 64],  # Question -> Answers
-    # (61, 62, 63, 64): 42,  # Answers -> Start
-    44: [45],  # Useful interval -> Concentration or Rest
-    45: [46],  # Concentration interval -> Rest
-}
-
-GROUP_TRANSITIONS = {
-    "BLOCKS": (21, 22, 23),  # Should be followed by 42
-    "ANSWERS": (61, 62, 63, 64),  # Should be followed by 42 or 16
-    "TAGS": (31, 32, 33, 34),  # Should be followed by 44 or 45
-}
+EVENT_COLUMNS = ["Time", "Trigger", "Code"]
+_START = "<start>"
 
 
-def event_correction(events: pd.DataFrame) -> pd.DataFrame:
+# ----------------------------------------------------------------------------
+# Whole session
+# ----------------------------------------------------------------------------
+def process_session_events(
+    raw,
+    n_s: int,
+    n_b: int,
+    protocol: Protocol = INNER_SPEECH,
+    known_issues: dict | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """
-    Correct and validate event sequences by detecting and inserting missing events.
+    Events, trial table and event-derived report fields of one recording.
 
-    This function analyzes temporal event sequences to identify missing events based on
-    expected patterns and relationships between event codes. It inserts corrected events
-    with appropriate
-    timing offsets and validates the final sequence against expected constraints.
+    Reads the triggers of ``raw``, corrects them, counts the answers to the
+    cognitive control questions and builds the trial table, applying the
+    exceptions listed for the session in ``known_issues``.
 
-    Args:
-        events: DataFrame with at least 3 columns representing:
-            - Column 0: Time stamps (numeric)
-            - Column 1: Trigger information (any type)
-            - Column 2: Event codes (numeric)
+    Parameters
+    ----------
+    raw : mne.io.BaseRaw
+        Raw recording with its Status (stim) channel.
+    n_s, n_b : int
+        Subject and session numbers.
+    protocol : Protocol
+        Event structure (default: this dataset).
+    known_issues : dict, optional
+        Per-session exceptions keyed by ``(n_s, n_b)``; default
+        :data:`innerspeech.protocol.KNOWN_ISSUES`.
 
-    Returns:
-        pd.DataFrame: Corrected events DataFrame with same structure as input, sorted
-        by time.
-        Missing events are inserted with calculated timestamps.
-
-    Raises:
-        ValueError: If input DataFrame doesn't have at least 3 columns
-        Exception: If corrected event sequence fails sanity checks
+    Returns
+    -------
+    events : pandas.DataFrame
+        Corrected events (see :func:`event_correction`); ``mne_events(events)``
+        gives the array to epoch with.
+    trials : pandas.DataFrame
+        Trial table (see :func:`trial_table`).
+    report : dict
+        ``Recording_time`` (s), ``Ans_R``, ``Ans_W``, ``Event_corrections``
+        and, for sessions with a known issue, ``Known_issue``.
     """
-    print("Starting event correction process...")
+    from innerspeech.data_extractions import get_events_from_raw
 
-    # Step 1: Validate input and prepare clean working data
-    events_df = _validate_input_dataframe(events)
-
-    # Step 2: Build analysis arrays for event sequence
-    events_code, event_count = _build_event_analysis_arrays(events_df)
-
-    # Step 3: Detect sequence warnings and missing events
-    warnings = _detect_sequence_warnings(events_code, event_count)
-
-    # Step 4: Apply corrections by inserting missing events
-    corrected_events_df = _apply_event_corrections(events_df, warnings)
-
-    # Step 5: Build final event count from corrected data for validation
-    corrected_codes = corrected_events_df.iloc[:, 2].astype(int).to_numpy()
-    unique_codes_fix, counts_fix = np.unique(corrected_codes, return_counts=True)
-    event_count_fix = np.zeros((len(unique_codes_fix), 2), dtype=int)
-    event_count_fix[:, 0] = unique_codes_fix
-    event_count_fix[:, 1] = counts_fix
-
-    # Step 6: Run comprehensive sanity checks on corrected events
-    _validate_corrected_events(event_count_fix)
-
-    print("Event correction process completed successfully")
-    return corrected_events_df
+    issues = KNOWN_ISSUES if known_issues is None else known_issues
+    issue = issues.get((n_s, n_b), {})
+    events = event_correction(
+        get_events_from_raw(raw, n_s, n_b, known_issues=issues), protocol
+    )
+    right, wrong = cognitive_control_check(events, protocol)
+    trials = trial_table(events, n_b, protocol, issue.get("relabel_condition"))
+    report = {
+        "Recording_time": int(np.round(raw.last_samp / raw.info["sfreq"])),
+        "Ans_R": right,
+        "Ans_W": wrong,
+        "Event_corrections": events.attrs["corrections"],
+    }
+    if "note" in issue:
+        report["Known_issue"] = issue["note"]
+    return events, trials, report
 
 
-def _validate_input_dataframe(events: pd.DataFrame) -> pd.DataFrame:
-    """
-    Validate input DataFrame and return a clean working copy.
-
-    Args:
-        events: Input events DataFrame with at least 3 columns (time, trigger, code)
-
-    Returns:
-        pd.DataFrame: Cleaned events DataFrame with excluded codes removed
-
-    Raises:
-        ValueError: If input doesn't have required columns
-    """
-    if events.shape[1] < 3:
-        raise ValueError(
-            "Events DataFrame must have at least 3 columns (time, trigger, code)"
-        )
-
-    # Exclude specific tag and ensure proper filtering
-    mask = events.iloc[:, 2].astype(int) != EVENT_CODES["EXCLUDE"]
-    return events.loc[mask].reset_index(drop=True)
-
-
-def _build_event_analysis_arrays(
-    events_df: pd.DataFrame,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Build event code arrays for sequence analysis.
-
-    Args:
-        events_df: Cleaned events DataFrame
-
-    Returns:
-        tuple[np.ndarray, np.ndarray]:
-            - Events_code array with shape (n_events, 2) containing [code, position]
-            - Event_count array with shape (n_unique_codes, 2) containing [code, count]
-    """
-    codes = events_df["Code"].copy().astype(int).to_numpy()
-
-    # Build Events_code array: [code, position]
-    events_code = np.zeros((len(codes), 2), dtype=int)
-    events_code[:, 0] = codes
-    events_code[:, 1] = np.arange(len(codes), dtype=int)
-
-    # Build Event_count array: [code, count]
-    unique_codes, counts = np.unique(codes, return_counts=True)
-    event_count = np.zeros((len(unique_codes), 2), dtype=int)
-    event_count[:, 0] = unique_codes
-    event_count[:, 1] = counts
-
-    return events_code, event_count
-
-
-def _detect_missing_tag_code(event_count: np.ndarray) -> int:
-    """
-    Identify which tag code (31-34) is missing based on minimum count.
-
-    Now is working only if one tag is missing.
-    TODO: Improve to handle multiple missing tags by analysing the block structure
-    and not the whole recording.
-
-    Args:
-        event_count: Event_count array with [code, count]
-
-    Returns:
-        int: The tag code with the minimum count (likely missing)
-    """
-    tag_counts = []
-    for tag_code in EVENT_CODES["TAGS"]:
-        counts = event_count[event_count[:, 0] == tag_code, 1]
-        tag_counts.append(int(counts[0]) if len(counts) else np.iinfo(int).max)
-
-    min_idx = int(np.argmin(tag_counts))
-    return EVENT_CODES["TAGS"][min_idx]
-
-
-def _check_event_transition(
-    current_code: int, next_code: int, event_count: np.ndarray
-) -> int | None:
-    """
-    Check if transition between current and next event code follows expected patterns.
-
-    Args:
-        current_code: Current event code in sequence
-        next_code: Next event code in sequence
-        event_count: Event_count array for statistical analysis
-
-    Returns:
-        int | None: Missing event code if transition is invalid, None if valid
-    """
-    # Check: 42 (Start mark) should be followed by Tags (31-34) or 44 (Useful interval)
-    if current_code == 42 and next_code not in EXPECTED_TRANSITIONS[42]:
-        if next_code == 44:
-            return _detect_missing_tag_code(event_count)
-        raise EventSequenceError("Invalid transition after start mark (42)")
-
-    # Check: Tags (31-34) should be followed by 44, ALWAYS after tags a 44 should come
-    if current_code in GROUP_TRANSITIONS["TAGS"] and next_code != 44:
-        return 44  # Missing useful interval after tag
-
-    # Check: 44 (Useful interval) should be followed by 45
-    if current_code == 44 and next_code not in EXPECTED_TRANSITIONS[44]:
-        return 45  # Missing concentration interval
-
-    # Check: 45 (Concentration interval) should ALWAYS be followed by 46 (Rest)
-    if current_code == 45 and next_code != 46:
-        return 46  # Missing rest interval
-
-    # Check: 46 (Rest interval) should be followed by valid next events
-    if current_code == 46 and next_code not in EXPECTED_TRANSITIONS[46]:
-        # There are three possible valid next events after 46:
-        # 42 (Start), 16 (End run), or 17 (Question)
-        # If the answer is the next code, the question mark is missing
-        if next_code in EVENT_CODES["ANSWERS"]:
-            return 17  # Missing question before answer
-        if next_code in EVENT_CODES["TAGS"]:
-            return 42  # Missing Concentration (start) mark
-        if next_code in EVENT_CODES["INTER_RUN_REST"]:
-            return 16  # Missing end of run
-        raise EventSequenceError("Invalid transition after rest interval (46)")
-
-    # Check: Blocks (21-23) should be followed by 42 (Start mark)
-    if current_code in GROUP_TRANSITIONS["BLOCKS"] and next_code != 42:
-        return 42  # Missing start after block
-
-    # Check: Answers (61-64) should be followed by 42 or 16
-    if current_code in GROUP_TRANSITIONS["ANSWERS"] and next_code not in (42, 16):
-        # After answers, either a new trial starts (42) or the block ends (16)
-        if next_code in EVENT_CODES["TAGS"]:
-            return 42  # Missing Concentration (start) mark
-        if next_code in EVENT_CODES["INTER_RUN_REST"]:
-            return 16  # Missing end of run
-        raise EventSequenceError("Invalid transition after answers (61-64)")
-
-    # Check: 17 (Question) should be followed by Answers (61-64)
-    if current_code == 17 and next_code not in EXPECTED_TRANSITIONS[17]:
-        print("Missing answer after question")
-        print("Filling with 61")
-        return 61  # Missing answer after question
-
-    return None  # Valid transition
-
-
-def _detect_sequence_warnings(
-    events_code: np.ndarray, event_count: np.ndarray
-) -> list[dict[str, int]]:
-    """
-    Scan event sequence to detect missing events and invalid transitions.
-
-    Args:
-        events_code: Events_code array with [code, position]
-        event_count: Event_count array with [code, count]
-
-    Returns:
-        list[dict[str, int]]: List of warnings with position and missing code
-    """
-    warnings = []
-
-    for i in range(len(events_code) - 1):
-        current_code = events_code[i, 0]
-        next_code = events_code[i + 1, 0]
-
-        missing_code = _check_event_transition(current_code, next_code, event_count)
-
-        if missing_code is not None:
-            warning_msg = f"Warning, missing code {missing_code} at position {i}"
-            print(warning_msg)
-
-            warnings.append(
-                {
-                    "position": i,
-                    "missing_code": missing_code,
-                    "current_code": current_code,
-                    "next_code": next_code,
-                }
-            )
-
-    return warnings
-
-
-def _create_correction_event(
-    events_df: pd.DataFrame, position: int, missing_code: int
-) -> list:
-    """
-    Create a new event row for insertion as a correction.
-
-    Args:
-        events_df: Original events DataFrame
-        position: Position in original sequence where correction is needed
-        missing_code: Event code to insert
-
-    Returns:
-        List: New event row with calculated timestamp and missing code
-    """
-    base_time = int(events_df.loc[position, "Time"])
-
-    # Calculate correction time based on missing code type
-    if missing_code in TIME_OFFSETS:
-        time_offset = TIME_OFFSETS[missing_code]
-    elif missing_code in EVENT_CODES["ANSWERS"]:
-        time_offset = TIME_OFFSETS["ANSWERS"]
-    else:
-        time_offset = TIME_OFFSETS["TAG"]  # Default offset for tags
-
-    correction_time = base_time + time_offset
-
-    # Build correction row matching original DataFrame structure
-    correction_row = [0] * events_df.shape[1]
-    correction_row[0] = correction_time  # Time column
-    correction_row[2] = int(missing_code)  # Code column
-
-    return correction_row
-
-
-def _apply_event_corrections(
-    events_df: pd.DataFrame, warnings: list[dict]
+# ----------------------------------------------------------------------------
+# Correction
+# ----------------------------------------------------------------------------
+def event_correction(
+    events: pd.DataFrame,
+    protocol: Protocol = INNER_SPEECH,
+    insert_cost: float = 1.0,
+    drop_cost: float = 2.5,
+    validate: bool = True,
 ) -> pd.DataFrame:
     """
-    Apply detected corrections to events DataFrame by inserting missing events.
+    Correct the event sequence of one session against the protocol.
 
-    Args:
-        events_df: Original events DataFrame
-        warnings: List of detected warnings with correction information
+    Parameters
+    ----------
+    events : pandas.DataFrame
+        Events as returned by ``get_events_from_raw``: columns ``Time``
+        (sample), ``Trigger`` (previous Status value) and ``Code``.
+    protocol : Protocol
+        Event structure of the session (default: this dataset).
+    insert_cost, drop_cost : float
+        Cost of inserting a missing event and of dropping a recorded one. With
+        the defaults, up to two missing events are inserted before a recorded
+        event is considered out of sequence.
+    validate : bool
+        Check the event counts of the corrected session (``protocol.checks``).
 
-    Returns:
-        pd.DataFrame: Corrected events DataFrame with missing events inserted
+    Returns
+    -------
+    pandas.DataFrame
+        Corrected events sorted by time, with the columns of the input and a
+        boolean ``inferred`` column (True for inserted events).
+        ``attrs["corrections"]`` lists every inserted, dropped, ignored and
+        missing event as dicts with ``sample``, ``code``, ``action`` and
+        ``reason``.
+
+    Raises
+    ------
+    EventSequenceError
+        If ``validate`` is True and the corrected counts are inconsistent.
     """
-    if not warnings:
-        print("No warnings detected, no corrections needed")
-        return events_df
-
-    print(f"Applying {len(warnings)} corrections to events")
-
-    # Generate correction rows for all detected issues
-    correction_rows = []
-    for warning in warnings:
-        correction_row = _create_correction_event(
-            events_df, warning["position"], warning["missing_code"]
-        )
-        correction_rows.append(correction_row)
-
-    # Create corrections DataFrame and merge with original
-    corrections_df = pd.DataFrame(correction_rows, columns=events_df.columns)
-    corrected_events = pd.concat([events_df, corrections_df], ignore_index=True)
-
-    # Sort by time (first column) to maintain temporal order
-    time_column = corrected_events.columns[0]
-    return corrected_events.sort_values(by=time_column).reset_index(drop=True)
-
-
-def _get_event_count(count_array: np.ndarray, target_code: int) -> int:
-    """
-    Extract count for a specific event code from count array.
-
-    Args:
-        count_array: Event_count array with [code, count]
-        target_code: Event code to count
-
-    Returns:
-        int: Count of specified event code, 0 if not found
-    """
-    matching_indices = np.where(count_array[:, 0] == target_code)[0]
-    return int(count_array[matching_indices, 1][0]) if matching_indices.size else 0
-
-
-def _validate_corrected_events(event_count_fix: np.ndarray):
-    """
-    Run comprehensive sanity checks on corrected event counts.
-
-    Args:
-        event_count_fix: Event_count array from corrected events
-
-    Raises:
-        Exception: With descriptive message if any sanity check fails
-    """
-    # Check 1: Start codes (11-14) should each appear exactly once
-    start_counts = [
-        _get_event_count(event_count_fix, code) for code in EVENT_CODES["STARTS"]
-    ]
-    if not all(count == 1 for count in start_counts):
-        raise EventSequenceError("Missing or duplicate start codes")
-    print("Start codes OK")
-
-    # Check 2: Block consistency (15, 16, 51 counts should follow specific relationship)
-    count_15 = _get_event_count(event_count_fix, 15)
-    count_16 = _get_event_count(event_count_fix, 16)
-    count_51 = _get_event_count(event_count_fix, 51)
-
-    if not (count_15 == count_16 and count_15 == count_51 + 1):
-        raise EventSequenceError("Missing or inconsistent blocks")
-    print("Blocks OK")
-
-    # Check 3: Tags (31-34) should all have equal counts
-    tag_counts = [
-        _get_event_count(event_count_fix, code) for code in EVENT_CODES["TAGS"]
-    ]
-    if not all(count == tag_counts[0] for count in tag_counts):
-        raise EventSequenceError("Missing or inconsistent tags")
-    print("Tags OK")
-
-    # Check 4: Marks (42, 44, 45, 46) should all have equal counts
-    mark_counts = [
-        _get_event_count(event_count_fix, code) for code in EVENT_CODES["MARKS"]
-    ]
-    if not all(count == mark_counts[0] for count in mark_counts):
-        raise EventSequenceError(
-            "Missing or inconsistent marks, got " + str(mark_counts)
-        )
-    print("Marks OK")
-
-    # Check 5: Cognitive control - questions should match answers
-    question_count = _get_event_count(event_count_fix, 17)
-    total_answers = sum(
-        _get_event_count(event_count_fix, code) for code in EVENT_CODES["ANSWERS"]
-    )
-
-    if question_count != total_answers:
-        raise EventSequenceError("Missing cognitive control question/answer pairs")
-    print("Cognitive control OK")
-
-
-def cognitive_control_check(events: pd.DataFrame) -> tuple[int, int]:
-    """
-    Check the correctness of cognitive control answers (vectorized pandas operations).
-
-    This version uses pandas shift operations for maximum efficiency.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-
-    Returns:
-    - tuple: A tuple containing the count of correct and wrong answers.
-    """
-    events_pd = events.copy()
-    # Add shifted columns for comparison
-    events_pd["prev_4_code"] = events_pd["Code"].shift(
-        4
-    )  # Code from 4 positions back (the tag)
-    events_pd["next_code"] = events_pd["Code"].shift(
-        -1
-    )  # Code from next position (the answer)
-
-    # Identify question events and check answers
-    question_mask = events["Code"] == 17
-    valid_question_mask = (
-        question_mask
-        & (events_pd["prev_4_code"].notna())
-        & (events_pd["next_code"].notna())
-    )
-
-    # Filter to valid questions with sufficient context
-    valid_questions = events_pd[valid_question_mask]
-
-    if len(valid_questions) == 0:
-        print("No cognitive control questions found with sufficient context")
-        return 0, 0
-
-    # Calculate expected answers and check correctness
-    valid_questions = valid_questions.copy()
-    valid_questions["expected_answer"] = valid_questions["prev_4_code"] + 30
-    valid_questions["is_correct"] = (
-        valid_questions["next_code"] == valid_questions["expected_answer"]
-    )
-
-    # Count results
-    ans_r = valid_questions["is_correct"].sum()
-    ans_w = len(valid_questions) - ans_r
-
-    # Handle questions without sufficient context
-    insufficient_context_questions = question_mask.sum() - len(valid_questions)
-    if insufficient_context_questions > 0:
-        print(
-            f"Warning: {insufficient_context_questions} questions skipped due to "
-            "insufficient context"
-        )
-        # Count these as wrong for conservative reporting
-        ans_w += insufficient_context_questions
-
-    # Validation and reporting
-    total_questions_found = question_mask.sum()
-
-    if ans_r + ans_w == total_questions_found:
-        if ans_w == 0:
-            print("All cognitive control answers are correct")
-        else:
-            print(
-                f"Cognitive control results: {ans_r} correct, {ans_w} wrong out of "
-                f"{total_questions_found} questions"
+    corrections: list[dict] = []
+    observed = []
+    for time, trigger, code in events[EVENT_COLUMNS].itertuples(index=False):
+        code = int(code)
+        if code in protocol.ignored_codes or code not in protocol.role_of_code:
+            reason = (
+                "hardware artefact"
+                if code in protocol.ignored_codes
+                else "unknown code"
             )
-    else:
-        print(
-            f"Validation note: Found {total_questions_found} questions, "
-            f"validated {ans_r + ans_w}"
+            corrections.append(_log(time, code, "ignored", reason))
+            continue
+        observed.append((int(time), int(trigger), code, protocol.role_of_code[code]))
+
+    steps = _align(observed, protocol, insert_cost, drop_cost)
+    rows, inserted_cues = _build_rows(observed, steps, protocol, corrections)
+    _infer_cue_classes(rows, inserted_cues, observed, protocol, corrections)
+
+    corrected = pd.DataFrame(rows, columns=[*EVENT_COLUMNS, "inferred"])
+    corrected = corrected.sort_values("Time", kind="stable").reset_index(drop=True)
+    corrected.attrs["corrections"] = corrections
+    for item in corrections:
+        logger.info(
+            "%s %s at sample %s (%s)",
+            item["action"],
+            item["code"],
+            item["sample"],
+            item["reason"],
         )
-
-    return int(ans_r), int(ans_w)
-
-
-def count_events_by_condition(
-    events: pd.DataFrame,
-) -> tuple[list[int], list[int], list[int]]:
-    """
-    Count events by condition in the corrected events data.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-
-    Returns:
-    - tuple: A tuple containing the counts for Pron, Im, and Vis conditions.
-             Each is a list of counts for tags [31, 32, 33, 34] in that condition.
-    """
-    events_array = events.iloc[:, 2].to_numpy()  # Use only the code column
-
-    # Initialize counters
-    pron = 0
-    im = 0
-    vis = 0
-
-    pron_count = [0, 0, 0, 0]  # Counts for tags 31, 32, 33, 34 in Pron condition
-    im_count = [0, 0, 0, 0]  # Counts for tags 31, 32, 33, 34 in Im condition
-    vis_count = [0, 0, 0, 0]  # Counts for tags 31, 32, 33, 34 in Vis condition
-
-    for i in range(len(events_array)):
-        current_code = events_array[i]
-
-        # Update current condition
-        if current_code == 21:
-            pron = 1
-            im = 0
-            vis = 0
-        elif current_code == 22:
-            pron = 0
-            im = 1
-            vis = 0
-        elif current_code == 23:
-            pron = 0
-            im = 0
-            vis = 1
-
-        # Count tags based on current condition
-        if 31 <= current_code <= 34:
-            tag_index = current_code - 31
-            if pron == 1:
-                pron_count[tag_index] += 1
-            elif im == 1:
-                im_count[tag_index] += 1
-            elif vis == 1:
-                vis_count[tag_index] += 1
-
-    # Validate tag distribution
-    if (
-        min(pron_count) == max(pron_count)
-        and min(im_count) == max(im_count)
-        and min(vis_count) == max(vis_count)
-    ):
-        print("Tags are evenly distributed across conditions")
-    else:
-        raise ValueError("Missing or incorrect tags distribution across conditions")
-
-    return pron_count, im_count, vis_count
+    if validate:
+        validate_counts(corrected, protocol)
+    return corrected
 
 
-def add_block_tag(events: pd.DataFrame, N_B: int) -> pd.DataFrame:
-    """
-    Add block tags to the corrected events data.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-    - N_B (int): Block number to be added as a tag.
-
-    Returns:
-    - pd.DataFrame: The events data with the block tags added as a new column.
-    """
-    # Add as new column to DataFrame
-    events["block"] = N_B
-
-    return events
-
-
-def add_condition_tag(events: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add condition tags to the corrected events data.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-
-    Returns:
-    - pd.DataFrame: The events data with the condition tags added as a new column.
-                    Only includes rows with tag codes 31, 32, 33, 34.
-    """
-    events_array = events.iloc[:, :3].to_numpy()  # Use first 3 columns
-
-    mod_tag = np.zeros(len(events_array), dtype=int)
-    current_mod = 0  # 0: Pron, 1: Im, 2: Vis, 3: Unknown
-
-    for i in range(len(events_array)):
-        current_code = events_array[i, 2]
-
-        # Update current condition
-        if current_code == 21:
-            current_mod = 0  # Pron
-        elif current_code == 22:
-            current_mod = 1  # Im
-        elif current_code == 23:
-            current_mod = 2  # Vis
-        # Don't reset to 3 for other codes - maintain last known condition
-
-        mod_tag[i] = current_mod
-
-    # Add condition tag to DataFrame
-    events["condition"] = mod_tag
-
-    # Filter to only include tag events (31, 32, 33, 34) using MNE
-    # First convert to MNE events format (time, duration, code)
-    mne_events = events.iloc[:, :3].to_numpy()
-    mne_events = mne_events.astype(int)  # Ensure integer type
-
-    # Use MNE to pick only the tag events
-    try:
-        picked_indices = mne.pick_events(mne_events, include=[31, 32, 33, 34])
-        events_filtered = events.iloc[picked_indices].reset_index(drop=True)
-    except Exception as e:
-        print(f"Warning: MNE event picking failed: {e}")
-        print("Falling back to manual filtering...")
-        # Manual filtering as fallback
-        mask = events.iloc[:, 2].isin([31, 32, 33, 34])
-        return events[mask].reset_index(drop=True)
-    else:
-        return events_filtered
-
-
-def delete_trigger_column(events: pd.DataFrame) -> pd.DataFrame:
-    """
-    Delete the trigger column from the corrected events data.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-
-    Returns:
-    - pd.DataFrame: Events data with the trigger column removed.
-    """
-    # Check if "Trigger" column exists
-    if "Trigger" in events.columns:
-        events_modified = events.drop(columns=["Trigger"])
-        print("Trigger column deleted successfully")
-    else:
-        print("Warning: No 'Trigger' column found to delete")
-        events_modified = events
-
-    return events_modified
-
-
-def standardize_labels(events: pd.DataFrame) -> pd.DataFrame:
-    """
-    Standardize labels in the corrected events data using pandas replace method.
-
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-
-    Returns:
-    - pd.DataFrame: Events data with standardized labels (31->0, 32->1, 33->2, 34->3).
-                    All other codes remain unchanged.
-    """
-
-    # Define the mapping dictionary for replacement
-    code_mapping = {
-        31: 0,  # "Arriba" / "Up" -> 0
-        32: 1,  # "Abajo" / "Down" -> 1
-        33: 2,  # "Derecha" / "Right" -> 2
-        34: 3,  # "Izquierda" / "Left" -> 3
+def _log(sample, code, action: str, reason: str) -> dict:
+    return {
+        "sample": int(sample),
+        "code": None if code is None else int(code),
+        "action": action,
+        "reason": reason,
     }
 
-    # Use pandas replace method for efficient mapping
-    events["Code"] = events["Code"].replace(code_mapping)
 
-    return events
+def _path(protocol: Protocol, state: str, role: str) -> tuple[str, ...] | None:
+    """Roles after ``state`` up to and including ``role``, or None."""
+    if state == _START:
+        if role == protocol.first_role:
+            return (role,)
+        rest = protocol.shortest_paths[protocol.first_role].get(role)
+        return None if rest is None else (protocol.first_role, *rest)
+    return protocol.shortest_paths[state].get(role)
 
 
-def check_baseline_tags(events: pd.DataFrame) -> pd.DataFrame:
+def _align(observed, protocol, insert_cost, drop_cost) -> list[tuple]:
+    """Fewest-changes alignment of the recorded events with the protocol.
+
+    ``cost[j, s]`` is the lowest cost of explaining the first ``j`` events
+    with ``s`` as the role of the last kept event. Returns one step per
+    recorded event: ``("keep", previous_state, path)`` or ``("drop", state)``.
     """
-    Check and add baseline tags to the corrected events DataFrame if necessary.
+    states = [_START, *protocol.roles]
+    index = {s: i for i, s in enumerate(states)}
+    n = len(observed)
+    cost = np.full((n + 1, len(states)), np.inf)
+    back: list[dict[int, tuple]] = [{} for _ in range(n + 1)]
+    cost[0, index[_START]] = 0.0
+    for j, (_, _, _, role) in enumerate(observed):
+        target = index[role]
+        for s in np.flatnonzero(np.isfinite(cost[j])):
+            base = cost[j, s]
+            path = _path(protocol, states[s], role)
+            if path is not None:  # keep, inserting the missing roles before it
+                c = base + insert_cost * (len(path) - 1)
+                if c < cost[j + 1, target]:
+                    cost[j + 1, target] = c
+                    back[j + 1][target] = ("keep", s, path)
+            c = base + drop_cost  # drop as out of sequence
+            if c < cost[j + 1, s]:
+                cost[j + 1, s] = c
+                back[j + 1][s] = ("drop", s)
+    state = int(np.argmin(cost[n]))
+    steps = []
+    for j in range(n, 0, -1):
+        step = back[j][state]
+        steps.append(step)
+        state = step[1]
+    return [(step[0], states[step[1]], *step[2:]) for step in steps[::-1]]
 
-    Parameters:
-    - events (pd.DataFrame): Corrected events DataFrame from event_correction function.
-                            Expected to have at least 3 columns where
-                            column 0 is time, column 2 is the event code.
 
-    Returns:
-    - pd.DataFrame: Events data with baseline tags checked and potentially added.
+def _build_rows(observed, steps, protocol, corrections):
+    rows, inserted_cues = [], []
+    previous_time = None
+    run_index = -1
+    for (time, trigger, code, role), step in zip(observed, steps, strict=True):
+        if step[0] == "drop":
+            corrections.append(_log(time, code, "dropped", "out of sequence"))
+            continue
+        path = step[2]
+        for missing in path[:-1]:
+            if missing == protocol.run_start_role:
+                run_index += 1
+            if previous_time is None:  # before the first recorded event
+                corrections.append(
+                    _log(
+                        time,
+                        None,
+                        "missing",
+                        f"{missing} before the first recorded event, not inserted",
+                    )
+                )
+                continue
+            previous_time += protocol.offset(missing)
+            fill = _fill_code(protocol, missing, run_index)
+            if missing == protocol.cue_role:
+                inserted_cues.append(len(rows))
+            rows.append([previous_time, 0, fill, True])
+            corrections.append(
+                _log(previous_time, fill, "inserted", f"missing {missing}")
+            )
+        if role == protocol.run_start_role:
+            run_index += 1
+        rows.append([time, trigger, code, False])
+        previous_time = time
+    return rows, inserted_cues
+
+
+def _fill_code(protocol: Protocol, role: str, run_index: int) -> int | None:
+    codes = protocol.roles[role]
+    if len(codes) == 1:
+        return codes[0]
+    if role == protocol.run_type_role and 0 <= run_index < len(protocol.run_order):
+        return protocol.run_order[run_index]
+    if role == protocol.cue_role:
+        return None  # inferred afterwards
+    return protocol.fill_codes.get(role, codes[0])
+
+
+def _infer_cue_classes(rows, inserted, observed, protocol, corrections) -> None:
+    """Class of the inserted cues.
+
+    One missing cue in the session: the class recorded least often in the
+    session (the rule of the original correction). Several: within each run,
+    the classes with fewer cues than the others, since every run presents the
+    classes equally often.
     """
-    if len(events) < 4:
-        raise ValueError(
-            "Events DataFrame must have at least 4 rows to check baseline tags"
+    if not inserted:
+        return
+    cue_codes = protocol.roles[protocol.cue_role]
+    if len(inserted) == 1:
+        recorded = [code for _, _, code, _ in observed]
+        counts = [recorded.count(c) for c in cue_codes]
+        _set_cue(
+            rows,
+            inserted[0],
+            cue_codes[int(np.argmin(counts))],
+            corrections,
+            "class recorded least often in the session",
         )
+        return
+    run_starts = set(protocol.roles[protocol.run_start_role])
+    run, runs = -1, []
+    for row in rows:
+        run += row[2] in run_starts
+        runs.append(run)
+    for r in sorted({runs[i] for i in inserted}):
+        in_run = [row[2] for row, rr in zip(rows, runs, strict=True) if rr == r]
+        counts = np.array([in_run.count(c) for c in cue_codes])
+        deficit = counts.max() - counts
+        for i in (i for i in inserted if runs[i] == r):
+            reason = "class missing from the run's balance"
+            if deficit.sum() == 0:
+                deficit = counts.max() + 1 - counts
+                reason = "class ambiguous, the run's least frequent class used"
+            k = int(np.argmax(deficit > 0))
+            deficit[k] -= 1
+            counts[k] += 1
+            _set_cue(rows, i, cue_codes[k], corrections, reason)
 
-    # The tag 14 (end of baseline) should be in the 4th row in the 3rd column
-    if int(events.loc[3, "Code"]) != 14:
-        print("Adding missing baseline end tag...")
 
-        # Baseline duration is 15 seconds, sampling freq assumed 1024
-        baseline_duration = 15 * 1024  # 15 seconds * 1024 Hz
-        time = int(events.loc[2, "Time"]) + baseline_duration
+def _set_cue(rows, i, code, corrections, reason) -> None:
+    rows[i][2] = code
+    for item in corrections:
+        if (
+            item["action"] == "inserted"
+            and item["code"] is None
+            and item["sample"] == rows[i][0]
+        ):
+            item["code"] = int(code)
+            item["reason"] += f" ({reason})"
+            break
 
-        # Build correction row using the same columns as the input DataFrame
-        correction_data = {events.columns[0]: time, events.columns[2]: 14}
 
-        # Fill other columns with defaults (0 or appropriate values)
-        for col in events.columns:
-            if col not in correction_data:
-                correction_data[col] = 0
+def validate_counts(events: pd.DataFrame, protocol: Protocol = INNER_SPEECH) -> None:
+    """
+    Check the event counts of a corrected session (``protocol.checks``).
 
-        correction = pd.DataFrame([correction_data])
+    Raises
+    ------
+    EventSequenceError
+        Describing the first check that fails.
+    """
+    codes = events["Code"].to_numpy(dtype=int)
 
-        # Append, sort by the time column, and reset index
-        events_corrected = pd.concat([events, correction], ignore_index=True)
-        events_corrected = events_corrected.sort_values(
-            by=events.columns[0]
-        ).reset_index(drop=True)
+    def count(code: int) -> int:
+        return int((codes == code).sum())
 
-    else:
-        print("Baseline tags are correct")
-        events_corrected = events
+    checks = protocol.checks
+    for code in checks.get("once", ()):
+        if count(code) != 1:
+            raise EventSequenceError(
+                f"Code {code} found {count(code)} times, expected 1"
+            )
+    if "runs" in checks:
+        start, end, between = (count(c) for c in checks["runs"])
+        if not start == end == between + 1:
+            raise EventSequenceError(
+                f"Inconsistent runs: {start} starts, {end} ends, {between} breaks"
+            )
+    for group in checks.get("equal_counts", ()):
+        counts = [count(c) for c in group]
+        if len(set(counts)) > 1:
+            raise EventSequenceError(f"Unequal counts of codes {group}: {counts}")
+    if "questions" in checks:
+        question, answers = checks["questions"]
+        if count(question) != sum(count(c) for c in answers):
+            raise EventSequenceError("Questions and answers do not match")
 
-    return events_corrected
+
+# ----------------------------------------------------------------------------
+# Derived information
+# ----------------------------------------------------------------------------
+def cognitive_control_check(
+    events: pd.DataFrame, protocol: Protocol = INNER_SPEECH
+) -> tuple[int, int]:
+    """
+    Count right and wrong answers to the cognitive control questions.
+
+    An answer is right when it names the class of the last cue before the
+    question. A question without an answer counts as wrong.
+
+    Returns
+    -------
+    tuple of int
+        ``(right, wrong)``.
+    """
+    cues = set(protocol.roles[protocol.cue_role])
+    questions = set(protocol.roles[protocol.question_role])
+    answers = set(protocol.roles[protocol.answer_role])
+    codes = events["Code"].to_numpy(dtype=int)
+    right = wrong = 0
+    last_cue = None
+    for i, code in enumerate(codes):
+        if code in cues:
+            last_cue = int(code)
+        elif code in questions:
+            answer = int(codes[i + 1]) if i + 1 < len(codes) else None
+            if (
+                answer in answers
+                and last_cue is not None
+                and answer == last_cue + protocol.answer_offset
+            ):
+                right += 1
+            else:
+                wrong += 1
+    return right, wrong
+
+
+def trial_table(
+    events: pd.DataFrame,
+    session: int,
+    protocol: Protocol = INNER_SPEECH,
+    condition_override: dict | None = None,
+) -> pd.DataFrame:
+    """
+    One row per trial (cue event) of a corrected session.
+
+    Parameters
+    ----------
+    events : pandas.DataFrame
+        Output of :func:`event_correction`.
+    session : int
+        Session number, stored in every row.
+    protocol : Protocol
+        Event structure (default: this dataset).
+    condition_override : dict, optional
+        ``{"trials": (first, stop), "condition": c}`` sets the condition of
+        trials ``first`` to ``stop - 1`` (see ``protocol.KNOWN_ISSUES``).
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``sample`` (sample of the raw 1024 Hz recording), ``class``
+        (0 = up, 1 = down, 2 = right, 3 = left), ``condition`` (0 = pronounced,
+        1 = inner, 2 = visualized), ``session`` and ``cue_inferred``.
+    """
+    cue_codes = protocol.roles[protocol.cue_role]
+    run_types = set(protocol.roles[protocol.run_type_role])
+    inferred = events["inferred"] if "inferred" in events else [False] * len(events)
+    condition = 0
+    rows = []
+    for time, code, was_inferred in zip(
+        events["Time"], events["Code"], inferred, strict=True
+    ):
+        code = int(code)
+        if code in run_types:
+            condition = protocol.condition_codes[code]
+        elif code in cue_codes:
+            rows.append(
+                (
+                    int(time),
+                    cue_codes.index(code),
+                    condition,
+                    session,
+                    bool(was_inferred),
+                )
+            )
+    table = pd.DataFrame(
+        rows, columns=["sample", "class", "condition", "session", "cue_inferred"]
+    )
+    if condition_override:
+        first, stop = condition_override["trials"]
+        table.loc[first : stop - 1, "condition"] = condition_override["condition"]
+    return table
+
+
+def mne_events(events: pd.DataFrame) -> np.ndarray:
+    """Events as the ``(n, 3)`` integer array MNE expects."""
+    return events[EVENT_COLUMNS].to_numpy(dtype=int)

@@ -13,15 +13,17 @@ If you prefer not to reprocess the data, you can download the preprocessed deriv
 directly using another script (Derivatives_download_tutorial.py).
 
 Preprocessing Steps:
-    1. Event extraction and correction
+    1. Event extraction and correction (innerspeech.events_analysis), with the
+       per-session exceptions listed in innerspeech.protocol.KNOWN_ISSUES
+       (e.g. sub-03 ses-01, who performed one inner speech run as visualized)
     2. EEG re-referencing
     3. 50 Hz notch filter (Argentina power line frequency)
     4. Bandpass filtering (low-cut and high-cut)
     5. Epoching and decimation
     6. ICA artifact removal (computationally intensive, hours per session)
-    7. Ad hoc correction for subjects who performed the tasks in another order
-    8. EMG validation using single threshold
-    9. Report generation and saving
+    7. EMG validation using single threshold
+    8. Saving: epochs (*-epo.fif), trial table (events.tsv) and report
+       (report.json); see innerspeech.derivatives_io for the formats
 
 All processing options are the variables at the top of the script; change them
 and re-run to obtain your own derivatives (save them to another folder with
@@ -33,27 +35,11 @@ import gc
 from pathlib import Path
 
 import mne
-import numpy as np
 
-from innerspeech.adhoc_modification import (
-    adhoc_subject_3,
-)
-from innerspeech.data_extractions import (
-    extract_subject_from_bdf,
-    get_age_gender,
-    get_events_from_raw,
-)
+from innerspeech.data_extractions import extract_subject_from_bdf, get_age_gender
 from innerspeech.derivatives_io import derivative_path, save_events, save_report
 from innerspeech.emg_control import EMG_control_single_th
-from innerspeech.events_analysis import (
-    add_block_tag,
-    add_condition_tag,
-    check_baseline_tags,
-    cognitive_control_check,
-    delete_trigger_column,
-    event_correction,
-    standardize_labels,
-)
+from innerspeech.events_analysis import mne_events, process_session_events
 from innerspeech.utils import find_project_root
 
 # Folder that contains this repository and the dataset (ds003626). Resolved from
@@ -104,6 +90,11 @@ fit_params = {"extended": True}
 # The results do not depend on this value.
 N_JOBS = -1
 
+# #################### Output files
+# Also write the files of releases up to 2.1.2 (events.dat, report.pkl) next to
+# events.tsv and report.json, for code that reads them
+SAVE_LEGACY_FILES = True
+
 # #################### EMG Control
 EMG_FILTER_LOW_CUT = 1
 EMG_FILTER_HIGH_CUT = 20
@@ -139,15 +130,6 @@ event_id = {"Arriba": 31, "Abajo": 32, "Derecha": 33, "Izquierda": 34}
 # Baseline id
 baseline_id = {"Baseline": 13}
 
-# Report initialization
-report = {
-    "Age": None,
-    "Gender": "-",
-    "Recording_time": None,
-    "Ans_R": None,
-    "Ans_W": None,
-}
-
 # Montage
 ACQUISITION_EQ = "biosemi128"
 # Get montage
@@ -172,35 +154,21 @@ EXG_channels = Ref_channels + Gaze_channels + Blinks_channels + Mouth_channels
 # ------------------ Processing loop ------------------
 
 for N_S in N_Subj_arr:
-    # Get Age and Gender
-    report["Age"], report["Gender"] = get_age_gender(N_S)
+    age, gender = get_age_gender(N_S)
 
     for N_B in N_block_arr:
-        print("Subject: " + str(N_S))
-        print("Session: " + str(N_B))
+        print(f"Subject {N_S}, session {N_B}")
 
         # Load data from BDF file
         rawdata, _ = extract_subject_from_bdf(data_dir, N_S, N_B)
 
-        # Get raw events
-        events = get_events_from_raw(rawdata, N_S, N_B)
-        print("Checking Events")
-        # Check and Correct baseline tags
-        events = check_baseline_tags(events)
-
-        # Check and Correct event
-        events = event_correction(events=events)
-
-        event_array = events.to_numpy()
-        event_array = np.array(event_array, dtype=int)
-
-        report["Recording_time"] = int(
-            np.round(rawdata.last_samp / rawdata.info["sfreq"])
-        )
-
-        # Cognitive Control
-        report["Ans_R"], report["Ans_W"] = cognitive_control_check(events)
-        print("Check done")
+        # Events: read, corrected against the protocol, and the trial table
+        # (one row per cue). The report gets the recording time, the answers
+        # to the cognitive control questions and the list of corrections.
+        events, trials, session_report = process_session_events(rawdata, N_S, N_B)
+        event_array = mne_events(events)
+        report = {"Age": age, "Gender": gender, **session_report}
+        print(f"{len(trials)} trials, {len(report['Event_corrections'])} corrections")
         # %%
         # Referencing
         rawdata.set_eeg_reference(ref_channels=Ref_channels)
@@ -213,7 +181,7 @@ for N_S in N_Subj_arr:
             rawdata.filter(LOW_CUT, HIGH_CUT, n_jobs=N_JOBS)
         # %%
         # Save report (also creates the session folder)
-        save_report(report, save_dir, N_S, N_B)
+        save_report(report, save_dir, N_S, N_B, legacy=SAVE_LEGACY_FILES)
 
         # %%
         print("Epoching")
@@ -333,20 +301,10 @@ for N_S in N_Subj_arr:
         del epochsEEG
         gc.collect()
 
-        # Standardize and save events
-        events = add_condition_tag(events)
-        events = add_block_tag(events, N_B=N_B)
-        events = delete_trigger_column(events)
-        events = standardize_labels(events)
+        # Save the trial table: sample, class, condition, session, ...
+        save_events(trials, save_dir, N_S, N_B, legacy=SAVE_LEGACY_FILES)
 
-        # Save events: (n_trials, 4) array [sample, class, condition, session]
-        save_events(events, save_dir, N_S, N_B)
-
-if 3 in N_Subj_arr and 1 in N_block_arr:
-    #  Ad Hoc Modifications (sub-03, session 1)
-    adhoc_subject_3(derivatives_dir=save_dir)
-
-# EMG Control
+# EMG Control (adds its results to events.tsv and the report)
 EMG_control_single_th(
     derivatives_dir=save_dir,
     N_Subj_arr=N_Subj_arr,
@@ -361,6 +319,7 @@ EMG_control_single_th(
     t_min_baseline=T_MIN_BASELINE,
     t_max_baseline=T_MAX_BASELINE,
     n_jobs=N_JOBS,
+    legacy=SAVE_LEGACY_FILES,
 )
 
 # %%
