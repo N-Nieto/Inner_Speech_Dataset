@@ -95,7 +95,7 @@ python checks/reproduce_session.py --subject 8 --session 3 --no-ica   # re-run o
                                                                       # drop --no-ica for the full run (hours)
 ```
 
-`verify_dataset.py` checks every file against the OpenNeuro checksums of version 2.1.2 and reports which files to download again. Add `--skip-md5` for a quick size-only check. Results are saved in `results/checks/`.
+`verify_dataset.py` checks every file against the OpenNeuro checksums of the newest version listed in `checks/` (or `--manifest`) and reports which files to download again. Add `--skip-md5` for a quick size-only check. Results are saved in `results/checks/`.
 
 
 ## Exploration tutorial. 
@@ -136,12 +136,16 @@ Project Folder
 │    └─ ses-01/
 │    │       ├─ sub-01_ses-01_baseline-epo.fif
 │    │       ├─ sub-01_ses-01_eeg-epo.fif
-│    │       ├─ sub-01_ses-01_events.dat
 │    │       ├─ sub-01_ses-01_exg-epo.fif
-│    │       └─ sub-01_ses-01_report.pkl
+│    │       ├─ sub-01_ses-01_events.tsv    [one row per trial]
+│    │       ├─ sub-01_ses-01_report.json   [session information]
+│    │       ├─ sub-01_ses-01_events.dat    [same trials, format up to 2.1.2]
+│    │       └─ sub-01_ses-01_report.pkl    [same report, format up to 2.1.2]
 │    └─ ses-02/...
 │    └─ ses-03/...
 ```
+
+`events.tsv` (from version 2.2.0) has the columns `sample`, `onset`, `class` (0 = up, 1 = down, 2 = right, 3 = left), `condition` (0 = pronounced, 1 = inner, 2 = visualized), `session`, `cue_inferred` (cue trigger missing and restored by the event correction) and the EMG control results `emg_power_exg7`, `emg_power_exg8` and `emg_tagged`; `derivatives/events.json` describes them. `report.json` holds age, gender, recording time, right and wrong answers to the control questions, the EMG control results and the list of event corrections. Read them with `innerspeech.derivatives_io` (`load_events_table`, `load_events`, `load_report`), which falls back to `events.dat` and `report.pkl` for older copies.
 
 The top level also holds `dataset_description.json`, `participants.tsv`, `task-innerspeech_eeg.json` and `task-innerspeech_events.json` (event codes).
 
@@ -150,7 +154,7 @@ The top level also holds `dataset_description.json`, `participants.tsv`, `task-i
 - The epoch files are sampled at **256 Hz** (1024 Hz decimated by 4); the Methods section of the paper says 254 Hz.
 - EEG and EXG trials have **1153 samples** (−0.5 to 4.0 s around the cue, both ends included); the paper says 1154.
 - The protocol start event code is **11**; Table 3 of the paper says 1.
-- The `sample` column of `events.dat` counts samples of the **raw 1024 Hz** recording (first sample = 0), not of the 256 Hz epoch files. Divide by 1024 for seconds from the start of the recording; it equals `epochs.events[:, 0]` of the matching `.fif` files.
+- The `sample` column of the events files counts samples of the **raw 1024 Hz** recording (first sample = 0), not of the 256 Hz epoch files. Divide by 1024 for seconds from the start of the recording; it equals `epochs.events[:, 0]` of the matching `.fif` files.
 - Since the dataset version after 2.1.2, `baseline-epo.fif` holds the 136 EEG + EXG channels (earlier versions also included the Status trigger channel), and the age of sub-05 is 30, as in Table 1 (earlier `report.pkl` files said 31).
 
 ## 5. Repository main structure
@@ -173,7 +177,7 @@ Project Folder
    │  ├─ TFR_representations.py                  [Power/ITC -> results/tfr]
    │  └─ Plotting/                               [ERPs, PSD, ITC and TFR topomaps -> results/figures]
    ├─ checks/                                    [Compare a local copy with the published dataset]
-   ├─ bids/                                      [Write the BIDS sidecar files of the dataset]
+   ├─ bids/                                      [BIDS sidecar files; events.tsv/report.json for published derivatives]
    ├─ tests/                                     [Automated tests on synthetic data]
    ├─ pyproject.toml                             [Dependencies and tool settings]
    ├─ uv.lock                                    [Pinned versions for uv]
