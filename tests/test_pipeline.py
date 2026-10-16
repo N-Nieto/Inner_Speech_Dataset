@@ -3,7 +3,13 @@
 import mne
 import numpy as np
 
-from innerspeech.derivatives_io import derivative_path, load_events, load_report
+from innerspeech.derivatives_io import (
+    TRIAL_COLUMNS,
+    derivative_path,
+    load_events,
+    load_events_table,
+    load_report,
+)
 
 N_EEG, N_TRIALS = 8, 200
 
@@ -17,6 +23,8 @@ def test_all_files_written(pipeline_output):
         "eeg-epo.fif",
         "exg-epo.fif",
         "baseline-epo.fif",
+        "events.tsv",
+        "report.json",
         "events.dat",
         "report.pkl",
     ):
@@ -47,12 +55,24 @@ def test_baseline_has_no_trigger_channel(pipeline_output):
     assert baseline.get_data().shape[-1] == 15 * 256 + 1
 
 
-def test_events_and_ad_hoc_correction(pipeline_output):
+def test_events_and_known_issue(pipeline_output):
     events = load_events(pipeline_output, 3, 1)
     assert events.shape == (N_TRIALS, 4)
     # sub-03 ses-01: trials 80-119 relabelled as visualized condition
     assert np.bincount(events[:, 2]).tolist() == [40, 40, 120]
     assert (events[80:120, 2] == 2).all()
+    # events.dat (legacy) holds the same four columns
+    legacy = np.load(derivative_path(pipeline_output, 3, 1, "events.dat"))
+    assert np.array_equal(legacy, events)
+
+
+def test_trial_table(pipeline_output):
+    table = load_events_table(pipeline_output, 3, 1)
+    assert list(table.columns) == list(TRIAL_COLUMNS)
+    assert not table["cue_inferred"].any()
+    assert table[["emg_power_exg7", "emg_power_exg8"]].notna().all().all()
+    assert table["emg_tagged"].notna().all()
+    assert not table.loc[table["condition"] == 0, "emg_tagged"].any()
 
 
 def test_report(pipeline_output):
@@ -61,3 +81,8 @@ def test_report(pipeline_output):
     assert (report["Ans_R"], report["Ans_W"]) == (20, 0)
     for key in ("EMG_trials", "Power_EXG7", "Power_EXG8", "Baseline_EXG7_mean"):
         assert key in report
+    assert [c["action"] for c in report["Event_corrections"]] == ["ignored"]
+    assert "visualized" in report["Known_issue"]
+    table = load_events_table(pipeline_output, 3, 1)
+    tagged = np.flatnonzero(table["emg_tagged"].to_numpy(dtype=bool))
+    assert report["EMG_trials"].tolist() == tagged.tolist()
