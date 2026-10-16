@@ -28,7 +28,7 @@ def load_script(relative_path: str):
 def pipeline_output(tmp_path_factory) -> Path:
     """Run InnerSpeech_preprocessing.py (ICA off) on a synthetic sub-03 ses-01.
 
-    Subject 3, session 1 also exercises the ad hoc condition correction.
+    Subject 3, session 1 also exercises a known issue (relabelled run).
     Returns the derivatives folder.
     """
     data_dir = tmp_path_factory.mktemp("pipeline") / "ds003626"

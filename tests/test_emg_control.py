@@ -5,7 +5,12 @@ import shutil
 import mne
 import numpy as np
 
-from innerspeech.derivatives_io import derivative_path, load_events, load_report
+from innerspeech.derivatives_io import (
+    derivative_path,
+    load_events,
+    load_events_table,
+    load_report,
+)
 from innerspeech.emg_control import EMG_control_single_th
 
 PARAMS = {
@@ -43,3 +48,10 @@ def test_tags_only_non_pronounced_trials_with_emg(derivatives, tmp_path):
     assert report["EMG_trials"].tolist() == sorted(float(i) for i in inner)
     assert len(report["Power_EXG7"]) == len(report["Power_EXG8"]) == 2
     assert report["Baseline_EXG7_std"] > 0
+
+    # The trial table holds the power of every trial and the tags
+    table = load_events_table(deriv, 1, 1)
+    assert np.flatnonzero(table["emg_tagged"]).tolist() == inner.tolist()
+    assert np.array_equal(table.loc[inner, "emg_power_exg7"], report["Power_EXG7"])
+    power = table["emg_power_exg7"].to_numpy()
+    assert power[pronounced[0]] > report["Baseline_EXG7_mean"]  # high, not tagged

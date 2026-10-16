@@ -49,6 +49,8 @@ def test_top_level_files(bids_dataset):
         (bids_dataset / "derivatives/dataset_description.json").read_text()
     )
     assert derivatives["DatasetType"] == "derivative"
+    columns = json.loads((bids_dataset / "derivatives/events.json").read_text())
+    assert {"sample", "class", "condition", "emg_tagged"} <= set(columns)
 
 
 def test_channels(bids_dataset):

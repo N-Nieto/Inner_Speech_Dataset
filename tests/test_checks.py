@@ -38,3 +38,13 @@ def test_integrity_detects_changed_and_missing_files(tmp_path):
 def test_newest_manifest_is_default():
     verify = load_script("checks/verify_dataset.py")
     assert verify.newest_manifest().name == "ds003626_2.2.0_manifest.json"
+
+
+def test_rebuilt_events_match_the_pipeline(pipeline_output):
+    from innerspeech.derivatives_io import load_events
+
+    verify = load_script("checks/verify_dataset.py")
+    events, fields = verify.rebuild_events(pipeline_output.parent, 3, 1)
+    assert (events == load_events(pipeline_output, 3, 1)).all()
+    assert (fields["Ans_R"], fields["Ans_W"]) == (20, 0)
+    assert fields["corrections"] == []
