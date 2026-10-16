@@ -1,12 +1,258 @@
 """
-@author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
+Select trials, time windows and frequency bands of the loaded data.
 
-Data processing
+The functions work on the arrays returned by
+:mod:`innerspeech.data_extractions`: ``X`` with trials on the first axis and
+time on the last, and ``Y`` the ``(n_trials, 4)`` events
+``[sample, class, condition, session]``. They return views or single copies
+and do not print.
+
+@author: Nicolás Nieto
 """
 
-# Imports
+from __future__ import annotations
 
 import numpy as np
+
+from innerspeech.exceptions import InvalidSelectionError
+
+# Names accepted for every condition and class (case-insensitive)
+CONDITIONS = {
+    0: ("pron", "pronounced", "pronunciado"),
+    1: ("in", "inner", "interno"),
+    2: ("vis", "visualized", "visualizado"),
+}
+CLASSES = {
+    0: ("up", "arriba"),
+    1: ("down", "abajo"),
+    2: ("right", "derecha"),
+    3: ("left", "izquierda"),
+}
+_ALL = ("all", "todos", "todo")
+
+
+def _code(name: str, names: dict[int, tuple[str, ...]], what: str) -> int | None:
+    """Code of a condition or class name; None for "all"."""
+    if not name:
+        raise InvalidSelectionError(f"Select a {what}.")
+    name = name.lower()
+    if name in _ALL:
+        return None
+    for code, aliases in names.items():
+        if name in aliases:
+            return code
+    raise InvalidSelectionError(f"The {what} {name!r} doesn't exist!")
+
+
+def condition_code(condition: str) -> int | None:
+    """
+    Number of a condition name (``None`` for ``"all"``).
+
+    Accepted names: ``"pron"``/``"pronounced"`` (0), ``"in"``/``"inner"`` (1),
+    ``"vis"``/``"visualized"`` (2), their Spanish names, and ``"all"``;
+    case-insensitive.
+    """
+    return _code(condition, CONDITIONS, "condition")
+
+
+def class_code(class_label: str) -> int | None:
+    """
+    Number of a class name (``None`` for ``"all"``).
+
+    Accepted names: ``"up"`` (0), ``"down"`` (1), ``"right"`` (2), ``"left"``
+    (3), their Spanish names, and ``"all"``; case-insensitive.
+    """
+    return _code(class_label, CLASSES, "class")
+
+
+def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
+    """
+    Trials of one condition.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Data (or any array) with trials on the first axis.
+    Y : numpy.ndarray
+        ``(n_trials, 4)`` events.
+    condition : str
+        Condition name, see :func:`condition_code`.
+
+    Returns
+    -------
+    tuple
+        ``(X, Y)`` of the selected trials (unchanged for ``"all"``).
+    """
+    code = condition_code(condition)
+    if code is None:
+        return X, Y
+    keep = Y[:, 2] == code
+    return X[keep], Y[keep]
+
+
+def filter_by_class(X: np.ndarray, Y: np.ndarray, class_condition: str) -> tuple:
+    """
+    Trials of one class.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Data (or any array) with trials on the first axis.
+    Y : numpy.ndarray
+        ``(n_trials, 4)`` events.
+    class_condition : str
+        Class name, see :func:`class_code`.
+
+    Returns
+    -------
+    tuple
+        ``(X, Y)`` of the selected trials (unchanged for ``"all"``).
+    """
+    code = class_code(class_condition)
+    if code is None:
+        return X, Y
+    keep = Y[:, 1] == code
+    return X[keep], Y[keep]
+
+
+def transform_for_classifier(
+    X: np.ndarray, Y: np.ndarray, classes: list, conditions: list
+) -> tuple:
+    """
+    Data and labels for a classifier, one label per group of condition/class
+    pairs.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Data with trials on the first axis.
+    Y : numpy.ndarray
+        ``(n_trials, 4)`` events.
+    classes, conditions : list of list of str
+        One list per group (label ``0, 1, ...``), with the class and condition
+        of every pair in the group, e.g. ``classes=[["up"], ["down"]]`` and
+        ``conditions=[["inner"], ["inner"]]`` for up vs down in inner speech.
+
+    Returns
+    -------
+    X : numpy.ndarray
+        The trials of every pair, group by group, in that order.
+    Y : numpy.ndarray
+        Float label (group number) of every trial.
+    """
+    if len(conditions) < 1 or len(classes) < 1:
+        raise ValueError("You have to select classes and conditions")
+    if len(conditions) != len(classes):
+        raise ValueError("Incorrect number of conditions or classes")
+
+    selected, labels = [], []
+    for group, (group_conditions, group_classes) in enumerate(
+        zip(conditions, classes, strict=True)
+    ):
+        if len(group_conditions) < 1 or len(group_classes) < 1:
+            raise ValueError("You have to select classes for each condition")
+        if len(group_conditions) != len(group_classes):
+            raise ValueError("Incorrect number of conditions or classes")
+        for condition, class_label in zip(group_conditions, group_classes, strict=True):
+            index, _ = filter_by_condition(np.arange(len(Y)), Y, condition)
+            index, _ = filter_by_class(index, Y[index], class_label)
+            selected.append(index)
+            labels.append(np.full(len(index), float(group)))
+    return X[np.concatenate(selected)], np.concatenate(labels)
+
+
+def select_time_window(
+    X: np.ndarray, t_start: float = 1, t_end: float = 2.5, fs: int = 256
+) -> np.ndarray:
+    """
+    Samples of a time window.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        ``(n_trials, n_channels, n_times)`` data.
+    t_start, t_end : float
+        Window in seconds from the first sample (clipped to the data).
+    fs : int
+        Sampling frequency (Hz).
+
+    Returns
+    -------
+    numpy.ndarray
+        View of ``X`` restricted to the window.
+    """
+    start = max(round(t_start * fs), 0)
+    end = min(round(t_end * fs), X.shape[2])
+    return X[:, :, start:end]
+
+
+def split_trial_in_time(
+    X: np.ndarray, Y: np.ndarray, window_len: float, window_step: float, fs: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Cut every trial into overlapping time windows.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        ``(n_trials, n_channels, n_times)`` data.
+    Y : numpy.ndarray
+        Labels or events, one row per trial.
+    window_len, window_step : float
+        Window length and step (s).
+    fs : int
+        Sampling frequency (Hz).
+
+    Returns
+    -------
+    X : numpy.ndarray
+        ``(n_trials * n_windows, n_channels, window samples)``: the windows of
+        the first trial, then those of the second, ...
+    Y : numpy.ndarray
+        The row of ``Y`` of every window.
+    """
+    length = round(fs * window_len)
+    step = round(fs * window_step)
+    if length > X.shape[2]:
+        raise ValueError(
+            f"Window of {length} samples longer than the trials ({X.shape[2]})"
+        )
+    # (n_trials, n_channels, n_windows, length) view, then one copy
+    windows = np.lib.stride_tricks.sliding_window_view(X, length, axis=2)[:, :, ::step]
+    n_windows = windows.shape[2]
+    X_windows = windows.transpose(0, 2, 1, 3).reshape(-1, X.shape[1], length)
+    return X_windows, np.repeat(np.asarray(Y), n_windows, axis=0)
+
+
+def average_in_frequency(
+    power: np.ndarray, frequency: np.ndarray, bands: list
+) -> np.ndarray:
+    """
+    Mean power in frequency bands.
+
+    Parameters
+    ----------
+    power : numpy.ndarray
+        ``(n, n_frequencies, n_times)`` power.
+    frequency : numpy.ndarray
+        Frequency of every row of the second axis (Hz).
+    bands : list of tuple
+        ``(f_min, f_max)`` of every band; frequencies strictly inside are
+        averaged.
+
+    Returns
+    -------
+    numpy.ndarray
+        ``(n, n_bands, n_times)`` mean power of every band.
+    """
+    frequency = np.asarray(frequency)
+    return np.stack(
+        [
+            power[:, (frequency > f_min) & (frequency < f_max), :].mean(axis=1)
+            for f_min, f_max in bands
+        ],
+        axis=1,
+    )
 
 
 def calculate_power_windowed(
@@ -26,19 +272,25 @@ def calculate_power_windowed(
     ``t_max``, so the last window may reach past ``t_max`` (it is cut at the
     end of the signal). All windows are computed at once.
 
-    Parameters:
-    - signal_data (np.ndarray): Signal with time on the last axis, e.g. one
-      channel ``(n_times,)`` or one channel of many trials ``(n_trials, n_times)``.
-    - fc (int): Sampling frequency of the signal.
-    - window_len (float): Length of the window in seconds.
-    - window_step (float): Step size between windows in seconds.
-    - t_min (float): Start of the first window, in seconds from the first sample.
-    - t_max (float): Windows start while the previous one ended at or before
-      this time (seconds).
+    Parameters
+    ----------
+    signal_data : numpy.ndarray
+        Signal with time on the last axis, e.g. one channel ``(n_times,)`` or
+        many trials and channels ``(n_trials, n_channels, n_times)``.
+    fc : int
+        Sampling frequency (Hz).
+    window_len, window_step : float
+        Window length and step (s).
+    t_min : float
+        Start of the first window (s from the first sample).
+    t_max : float
+        Windows start while the previous one ended at or before this time (s).
 
-    Returns:
-    - tuple: Mean and standard deviation of the window powers, with the shape
-      of ``signal_data`` without its last axis (scalars for a 1-D signal).
+    Returns
+    -------
+    tuple of numpy.ndarray
+        Mean and standard deviation of the window powers, with the shape of
+        ``signal_data`` without its last axis (scalars for a 1-D signal).
     """
     signal_data = np.asarray(signal_data)
     n_times = signal_data.shape[-1]
@@ -65,234 +317,3 @@ def calculate_power_windowed(
         )
 
     return power.mean(axis=-1), power.std(axis=-1)
-
-
-def select_time_window(
-    X: np.ndarray, t_start: float = 1, t_end: float = 2.5, fs: int = 256
-) -> np.ndarray:
-    """
-    Select a time window from the input data.
-
-    Parameters:
-    - X (np.ndarray): The input data.
-    - t_start (float): Start time of the window in seconds.
-    - t_end (float): End time of the window in seconds.
-    - fs (int): Sampling frequency of the data.
-
-    Returns:
-    - np.ndarray: The selected time window.
-    """
-    t_max = X.shape[2]
-    start = max(round(t_start * fs), 0)
-    end = min(round(t_end * fs), t_max)
-
-    # Copy interval
-    return X[:, :, start:end]
-
-
-def filter_by_condition(X: np.ndarray, Y: np.ndarray, condition: str) -> tuple:
-    """
-    Filter data based on a specified condition.
-
-    Parameters:
-    - X (np.ndarray): Input data.
-    - Y (np.ndarray): Labels or events corresponding to the input data.
-    - condition (str): The condition to filter the data.
-
-    Returns:
-    - tuple: A tuple containing the filtered X and Y arrays.
-    """
-    if not condition:
-        raise ValueError("You have to select the conditions!")
-
-    condition_upper = condition.upper()
-
-    if condition_upper == "ALL":
-        return X, Y
-    if condition_upper in {"PRON", "PRONOUNCED"}:
-        p = 0
-    elif condition_upper in {"IN", "INNER"}:
-        p = 1
-    elif condition_upper in {"VIS", "VISUALIZED"}:
-        p = 2
-    else:
-        raise ValueError(f"The condition '{condition}' doesn't exist!")
-
-    X_r = X[Y[:, 2] == p]
-    Y_r = Y[Y[:, 2] == p]
-
-    return X_r, Y_r
-
-
-def transform_for_classifier(
-    X: np.ndarray, Y: np.ndarray, classes: list, conditions: list
-) -> tuple:
-    """
-    Transform data for a classifier based on specified classes and conditions.
-
-    Parameters:
-    - X (np.ndarray): Input data.
-    - Y (np.ndarray): Labels or events corresponding to the input data.
-    - classes (list): List of classes for each condition.
-    - conditions (list): List of conditions for each class.
-
-    Returns:
-    - tuple: A tuple containing the transformed X and Y arrays.
-    """
-    n_groups_cnd = len(conditions)
-    n_groups_cls = len(classes)
-
-    if n_groups_cnd < 1 or n_groups_cls < 1:
-        raise ValueError("You have to select classes and conditions")
-
-    if n_groups_cnd != n_groups_cls:
-        raise ValueError("Incorrect number of conditions or classes")
-
-    for n_group in range(n_groups_cnd):
-        n_ind_cond = len(conditions[n_group])
-        n_ind_cls = len(classes[n_group])
-
-        if n_ind_cond < 1 or n_ind_cls < 1:
-            raise ValueError("You have to select classes for each condition")
-
-        if n_ind_cond != n_ind_cls:
-            raise ValueError("Incorrect number of conditions or classes")
-
-        for n_ind in range(n_ind_cls):
-            condition = conditions[n_group][n_ind]
-            class_label = classes[n_group][n_ind]
-
-            X_aux, Y_aux = filter_by_condition(X, Y, condition)
-            X_aux, Y_aux = filter_by_class(X_aux, Y_aux, class_label)
-
-            if n_ind == 0 and n_group == 0:
-                X_final = X_aux.copy()
-                Y_final = n_group * np.ones(len(Y_aux))
-            else:
-                X_final = np.vstack([X_final, X_aux])
-                Y_final = np.hstack([Y_final, n_group * np.ones(len(Y_aux))])
-
-    return X_final, Y_final
-
-
-# In[]
-def average_in_frequency(
-    power: np.ndarray, frequency: np.ndarray, bands: list
-) -> np.ndarray:
-    """
-    Calculate the average power within specified frequency bands.
-
-    Parameters:
-    - power (np.ndarray): Power data.
-    - frequency (np.ndarray): Frequency values.
-    - bands (list): List of frequency bands.
-
-    Returns:
-    - np.ndarray: The averaged power within each frequency band.
-    """
-    n_bands = len(bands)
-
-    for n_band in range(n_bands):
-        f_min, f_max = bands[n_band]
-
-        index = np.logical_and(frequency > f_min, frequency < f_max)
-
-        pow_select = power[:, index, :]
-
-        power_band = np.average(pow_select, axis=1)
-        power_band = np.reshape(
-            power_band, (power_band.shape[0], 1, power_band.shape[1])
-        )
-
-        if n_band == 0:
-            power_bands = power_band
-        else:
-            power_bands = np.hstack((power_bands, power_band))
-
-    return power_bands
-
-
-def filter_by_class(X: np.ndarray, Y: np.ndarray, class_condition: str) -> tuple:
-    """
-    Filter data based on a specified class condition.
-
-    Parameters:
-    - X (np.ndarray): Input data.
-    - Y (np.ndarray): Labels or events corresponding to the input data.
-    - class_condition (str): The class condition to filter the data.
-
-    Returns:
-    - tuple: A tuple containing the filtered X and Y arrays.
-    """
-    if not class_condition:
-        raise ValueError("You have to select the classes for each condition!")
-
-    class_condition_upper = class_condition.upper()
-
-    if class_condition_upper == "ALL":
-        return X, Y
-    if class_condition_upper in {"UP", "ARRIBA"}:
-        p = 0
-    elif class_condition_upper in {"DOWN", "ABAJO"}:
-        p = 1
-    elif class_condition_upper in {"RIGHT", "DERECHA"}:
-        p = 2
-    elif class_condition_upper in {"LEFT", "IZQUIERDA"}:
-        p = 3
-    else:
-        raise ValueError(f"The class '{class_condition}' doesn't exist!")
-
-    X_r = X[Y[:, 1] == p]
-    Y_r = Y[Y[:, 1] == p]
-
-    return X_r, Y_r
-
-
-def split_trial_in_time(
-    X: np.ndarray[np.float64, np.dtype[np.float64]],
-    Y: np.ndarray[np.int64, np.dtype[np.int64]],
-    window_len: float,
-    window_step: float,
-    fs: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Split trials in time based on specified window parameters.
-
-    Parameters:
-    - X (np.ndarray): Input data.
-    - Y (np.ndarray): Labels or events corresponding to the input data.
-    - window_len (float): Length of the window in seconds.
-    - window_step (float): Step size between windows in seconds.
-    - fs (int): Sampling frequency of the data.
-
-    Returns:
-    - tuple: A tuple containing the split X and Y arrays.
-    """
-    print("Input X shape:", X.shape)
-    n_trials, _, t_max = X.shape
-
-    # Window parameters
-    samples_per_window = round(fs * window_len)
-    samples_per_step = round(fs * window_step)
-    n_windows = ((t_max - samples_per_window) // samples_per_step) + 1
-
-    # Initializations
-    x_windows = []
-    y_windows = []
-
-    # Main loop
-    for n_tr in range(n_trials):
-        trial_data = X[n_tr]
-        for w in range(n_windows):
-            start_idx = w * samples_per_step
-            end_idx = start_idx + samples_per_window
-            if end_idx <= t_max:
-                window = trial_data[:, start_idx:end_idx]
-                x_windows.append(window)
-                y_windows.append(Y[n_tr])
-
-    X_final = np.array(x_windows)
-    Y_final = np.array(y_windows)
-
-    print("Output X shape:", X_final.shape)
-    return X_final, Y_final

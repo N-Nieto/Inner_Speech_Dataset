@@ -34,18 +34,13 @@ import mne
 import numpy as np
 from packaging.version import Version
 
-from innerspeech.adhoc_modification import _CONDITION_COL, _SUB03_SES01_ROWS
-from innerspeech.data_extractions import get_events_from_raw
-from innerspeech.derivatives_io import _as_events_array, load_events, load_report
-from innerspeech.events_analysis import (
-    add_block_tag,
-    add_condition_tag,
-    check_baseline_tags,
-    cognitive_control_check,
-    delete_trigger_column,
-    event_correction,
-    standardize_labels,
+from innerspeech.derivatives_io import (
+    EVENTS_COLUMNS,
+    _as_events_array,
+    load_events,
+    load_report,
 )
+from innerspeech.events_analysis import process_session_events
 from innerspeech.utils import find_project_root
 
 HERE = Path(__file__).resolve().parent
@@ -97,25 +92,20 @@ def rebuild_events(data_dir: Path, n_s: int, n_b: int) -> tuple[np.ndarray, dict
     sub, ses = f"sub-{n_s:02d}", f"ses-{n_b:02d}"
     bdf = data_dir / sub / ses / "eeg" / f"{sub}_{ses}_task-innerspeech_eeg.bdf"
     raw = mne.io.read_raw_bdf(bdf, preload=False, verbose="ERROR")
-    events = get_events_from_raw(raw, n_s, n_b)
-    events = check_baseline_tags(events)
-    events = event_correction(events=events)
-    ans_r, ans_w = cognitive_control_check(events)
+    _, trials, report = process_session_events(raw, n_s, n_b)
     fields = {
-        "Recording_time": int(np.round(raw.last_samp / raw.info["sfreq"])),
-        "Ans_R": ans_r,
-        "Ans_W": ans_w,
+        "Recording_time": report["Recording_time"],
+        "Ans_R": report["Ans_R"],
+        "Ans_W": report["Ans_W"],
         "n_channels": len(raw.ch_names),
         "sfreq": raw.info["sfreq"],
+        "corrections": [
+            f"{c['action']} {c['code']} at {c['sample']} ({c['reason']})"
+            for c in report["Event_corrections"]
+            if c["action"] != "ignored"
+        ],
     }
-    events = add_condition_tag(events)
-    events = add_block_tag(events, N_B=n_b)
-    events = delete_trigger_column(events)
-    events = standardize_labels(events)
-    events = _as_events_array(events)
-    if (n_s, n_b) == (3, 1):  # ad hoc correction (adhoc_subject_3)
-        events[_SUB03_SES01_ROWS, _CONDITION_COL] = 2
-    return events, fields
+    return _as_events_array(trials[list(EVENTS_COLUMNS)]), fields
 
 
 def check_events(

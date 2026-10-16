@@ -141,12 +141,12 @@ def main() -> int:
             derivative_path(published, n_s, n_b, kind),
         )
     new_ev, pub_ev = load_events(rerun, n_s, n_b), load_events(published, n_s, n_b)
-    result["events.dat"] = (
+    result["events"] = (
         "identical"
         if np.array_equal(new_ev, pub_ev)
         else (f"differs ({len(new_ev)} vs {len(pub_ev)} rows)")
     )
-    result["report.pkl"] = compare_report(
+    result["report"] = compare_report(
         load_report(rerun, n_s, n_b), load_report(published, n_s, n_b)
     )
 
@@ -156,7 +156,7 @@ def main() -> int:
         if isinstance(val, dict):
             diffs = ", ".join(f"{k}={v}" for k, v in val.items() if v != "same")
             print(f"  {key}: {diffs or 'all fields same'}")
-        elif key.endswith((".fif", ".dat")):
+        elif key.endswith(".fif") or key == "events":
             print(f"  {key}: {val}")
     out = out_root / f"comparison_sub-{n_s:02d}_ses-{n_b:02d}.json"
     out.write_text(json.dumps(result, indent=1, default=str))

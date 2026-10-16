@@ -38,8 +38,8 @@ DERIVATIVE_PATTERNS = {
     "eeg": "*_eeg-epo.fif",
     "baseline": "*_baseline-epo.fif",
     "exg": "*_exg-epo.fif",
-    "events": "*_events.dat",
-    "report": "*_report.pkl",
+    "events": "*_events.*",  # events.tsv (from 2.2.0) and events.dat
+    "report": "*_report.*",  # report.json (from 2.2.0) and report.pkl
     "all": "*",
 }
 
@@ -107,8 +107,8 @@ def get_derivatives(
     file_types : str or list of str, default="all"
         Any of ``"eeg"`` (``*_eeg-epo.fif``), ``"baseline"``
         (``*_baseline-epo.fif``), ``"exg"`` (``*_exg-epo.fif``),
-        ``"events"`` (``*_events.dat``), ``"report"`` (``*_report.pkl``)
-        or ``"all"``.
+        ``"events"`` (``*_events.tsv`` and ``*_events.dat``), ``"report"``
+        (``*_report.json`` and ``*_report.pkl``) or ``"all"``.
 
     subjects, sessions : "all", None, str, int or list, default="all"
         Identifiers without the ``"sub-"`` / ``"ses-"`` prefix. Integers are
