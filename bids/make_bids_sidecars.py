@@ -16,6 +16,7 @@ Per recording (sub-XX/ses-YY/eeg/):
     *_events.tsv                    every trigger of the Status channel, as recorded
 
 derivatives/dataset_description.json   describes the preprocessed files
+derivatives/events.json                 meaning of the derivatives' events.tsv columns
 
 Usage (from the repository folder, in the project environment):
 
@@ -36,6 +37,7 @@ from pathlib import Path
 
 import mne
 
+from innerspeech.derivatives_io import TRIAL_COLUMNS_JSON
 from innerspeech.utils import find_project_root
 
 HERE = Path(__file__).resolve().parent
@@ -142,7 +144,7 @@ EVENTS_JSON = {
     "sample": {
         "Description": "Sample number of the trigger in the recording (1024 Hz, "
         "first sample = 0). Same numbering as the 'sample' column of the "
-        "derivatives' events.dat files."
+        "derivatives' events.tsv and events.dat files."
     },
     "value": {
         "Description": "Trigger code as recorded in the Status channel",
@@ -156,7 +158,7 @@ EVENTS_JSON = {
         "Description": "Condition of the run the trigger belongs to, from the "
         "run start code (21, 22, 23); n/a outside runs. In sub-03 ses-01 the "
         "second inner speech run (trials 80-119) was performed as visualized "
-        "condition; the derivatives' events.dat files carry the corrected label.",
+        "condition; the derivatives' events files carry the corrected label.",
         "Levels": {
             "pronounced": "Pronounced speech",
             "inner": "Inner speech",
@@ -244,7 +246,9 @@ DERIVATIVES_DESCRIPTION = {
                 "infomax) on the EEG, removing components correlated with "
                 "EXG3-EXG8; EMG control of inner speech and visualized trials. "
                 "Files per session: eeg-epo.fif, exg-epo.fif, baseline-epo.fif, "
-                "events.dat, report.pkl."
+                "events.tsv (one row per trial, columns described in events.json) "
+                "and report.json; events.dat and report.pkl hold the same trials "
+                "and report in the format of releases up to 2.1.2."
             ),
             "CodeURL": CODE_URL,
         }
@@ -450,6 +454,10 @@ def main() -> int:
                 DERIVATIVES_DESCRIPTION,
                 args.overwrite,
             ),
+        )
+        track(
+            deriv / "events.json",
+            write_json(deriv / "events.json", TRIAL_COLUMNS_JSON, args.overwrite),
         )
 
     recordings = sorted(
