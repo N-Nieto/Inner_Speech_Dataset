@@ -302,6 +302,26 @@ def load_events(derivatives_dir: str | Path, n_s: int, n_b: int) -> np.ndarray:
 # ----------------------------------------------------------------------
 # Report
 # ----------------------------------------------------------------------
+class _NumpyUnpickler(pickle.Unpickler):
+    """Unpickler for files written with NumPy 1.x, read with NumPy 2.
+
+    Published ``report.pkl`` files refer to ``numpy.core``, renamed
+    ``numpy._core`` in NumPy 2 (the old name works but warns).
+    """
+
+    def find_class(self, module, name):
+        old_name = module == "numpy.core" or module.startswith("numpy.core.")
+        if old_name and int(np.__version__.split(".")[0]) >= 2:
+            module = "numpy._core" + module.removeprefix("numpy.core")
+        return super().find_class(module, name)
+
+
+def read_pickle(path: str | Path):
+    """Read a pickle written with NumPy 1.x or 2.x (e.g. ``report.pkl``)."""
+    with Path(path).open("rb") as f:
+        return _NumpyUnpickler(f).load()
+
+
 def _to_json(value):
     if isinstance(value, np.ndarray):
         return value.tolist()
@@ -345,8 +365,7 @@ def load_report(derivatives_dir: str | Path, n_s: int, n_b: int) -> dict:
     if path.exists():
         report = json.loads(path.read_text("utf-8"))
     else:
-        with derivative_path(derivatives_dir, n_s, n_b, "report.pkl").open("rb") as f:
-            report = pickle.load(f)
+        report = read_pickle(derivative_path(derivatives_dir, n_s, n_b, "report.pkl"))
     for key in _ARRAY_KEYS:
         if key in report:
             report[key] = np.asarray(report[key], dtype=float)

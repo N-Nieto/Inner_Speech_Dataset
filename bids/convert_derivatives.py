@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import pickle
 import sys
 from pathlib import Path
 
@@ -45,6 +44,7 @@ from innerspeech.derivatives_io import (
     RAW_SFREQ,
     _as_events_array,
     derivative_path,
+    read_pickle,
     save_events,
     save_report,
 )
@@ -72,8 +72,7 @@ RTOL = 1e-6  # relative tolerance for the EMG powers (other MNE/SciPy versions)
 def published(deriv: Path, n_s: int, n_b: int) -> tuple[np.ndarray, dict]:
     """``events.dat`` and ``report.pkl`` as published (ignoring new files)."""
     events = np.load(derivative_path(deriv, n_s, n_b, "events.dat"), allow_pickle=True)
-    with derivative_path(deriv, n_s, n_b, "report.pkl").open("rb") as f:
-        report = pickle.load(f)
+    report = read_pickle(derivative_path(deriv, n_s, n_b, "report.pkl"))
     return _as_events_array(events), report
 
 
@@ -109,7 +108,19 @@ def convert_session(
         problems.append(
             f"{len(rows)} trials differ in {cols} (first rows {rows[:5].tolist()})"
         )
+    notes = []
+    # The recording time is rounded to seconds; MNE versions differ by one
+    # sample on files whose last data record is incomplete (sub-01 ses-03),
+    # which moves the rounding by 1 s. The published value is kept.
+    diff = abs(rebuilt["Recording_time"] - pub_report.get("Recording_time", -9))
+    if diff == 1:
+        notes.append(
+            f"Recording_time: rebuilt {rebuilt['Recording_time']}, published "
+            f"{pub_report['Recording_time']} (1 s rounding; published value kept)"
+        )
     for key in ("Recording_time", "Ans_R", "Ans_W"):
+        if key == "Recording_time" and diff <= 1:
+            continue
         if rebuilt[key] != pub_report.get(key):
             problems.append(
                 f"{key}: rebuilt {rebuilt[key]}, published {pub_report.get(key)}"
@@ -138,6 +149,7 @@ def convert_session(
         "session": f"{sub} {ses}",
         "status": "differs" if problems else "ok",
         "problems": problems,
+        "notes": notes,
         "n_trials": len(trials),
         "corrections": [
             f"{c['action']} {c['code']} at {c['sample']} ({c['reason']})"
@@ -208,6 +220,8 @@ def main() -> int:
             print(summary["status"], "(written)" if written else "")
             for line in summary["problems"]:
                 print("    problem:", line)
+            for line in summary.get("notes", []):
+                print("    note:", line)
             for line in summary.get("corrections", []):
                 print("    correction:", line)
 

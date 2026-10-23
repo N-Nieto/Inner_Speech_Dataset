@@ -154,6 +154,16 @@ def test_wrong_and_missing_answers():
     assert cognitive_control_check(events) == (19, 1)
 
 
+def test_inserted_answer_counts_as_wrong():
+    """A missing answer is filled with code 61; it must not count as right."""
+    full, _ = make_event_sequence()
+    questions = [i for i, (_, c) in enumerate(full) if c == 17]
+    up = next(i for i in questions if full[i - 4][1] == 31)  # cue "up" -> 61
+    events = corrected(drop=(up + 1,))
+    assert events.loc[events["inferred"], "Code"].tolist() == [61]
+    assert cognitive_control_check(events) == (19, 1)
+
+
 def test_known_issues_are_applied():
     raw = make_raw()
     # A one-sample glitch is found by default and ignored as an unknown code

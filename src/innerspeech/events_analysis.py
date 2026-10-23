@@ -375,7 +375,8 @@ def cognitive_control_check(
     Count right and wrong answers to the cognitive control questions.
 
     An answer is right when it names the class of the last cue before the
-    question. A question without an answer counts as wrong.
+    question. A question without a recorded answer counts as wrong, also when
+    the event correction inserted one (its code is a placeholder).
 
     Returns
     -------
@@ -386,6 +387,11 @@ def cognitive_control_check(
     questions = set(protocol.roles[protocol.question_role])
     answers = set(protocol.roles[protocol.answer_role])
     codes = events["Code"].to_numpy(dtype=int)
+    inferred = (
+        events["inferred"].to_numpy(dtype=bool)
+        if "inferred" in events
+        else np.zeros(len(codes), dtype=bool)
+    )
     right = wrong = 0
     last_cue = None
     for i, code in enumerate(codes):
@@ -395,6 +401,7 @@ def cognitive_control_check(
             answer = int(codes[i + 1]) if i + 1 < len(codes) else None
             if (
                 answer in answers
+                and not inferred[i + 1]
                 and last_cue is not None
                 and answer == last_cue + protocol.answer_offset
             ):

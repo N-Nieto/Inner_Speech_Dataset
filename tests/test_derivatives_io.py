@@ -109,3 +109,18 @@ def test_report_roundtrip(tmp_path):
         legacy = pickle.load(f)
     assert set(legacy) <= set(LEGACY_REPORT_KEYS)
     assert "Event_corrections" not in legacy
+
+
+def test_numpy1_pickles_load_without_warning(tmp_path):
+    """report.pkl files of 2.1.2 refer to numpy.core (numpy._core in NumPy 2)."""
+    import warnings
+
+    from innerspeech.derivatives_io import read_pickle
+
+    data = pickle.dumps({"Baseline_EXG7_mean": np.float64(1.5)}, protocol=0)
+    data = data.replace(b"numpy._core", b"numpy.core")  # as NumPy 1.x writes it
+    path = tmp_path / "report.pkl"
+    path.write_bytes(data)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert read_pickle(path) == {"Baseline_EXG7_mean": 1.5}
