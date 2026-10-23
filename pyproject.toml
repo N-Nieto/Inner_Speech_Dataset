@@ -43,6 +43,13 @@ dev = [
     "edfio>=0.4",                 # BDF export for the synthetic test recordings
     "bids-validator-deno>=3",     # BIDS validator used by the tests and bids/
 ]
+# Documentation website (mkdocs.yml, docs/): uv sync --group docs; uv run mkdocs serve
+docs = [
+    "mkdocs>=1.6,<2",             # MkDocs 2 drops the plugin system Material relies on
+    "mkdocs-material>=9.6",
+    "mkdocstrings[python]>=0.29",
+    "ruff>=0.15",                 # formats the signatures in the API reference
+]
 
 # The shared code lives in the `innerspeech` package (src/innerspeech); the
 # scripts in Python_Processing/ and the tutorials import it. Install the repo

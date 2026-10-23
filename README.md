@@ -5,6 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)
 ![MNE](https://img.shields.io/badge/MNE-python-blueviolet)
 ![Colab](https://img.shields.io/badge/Colab-Notebook-red?logo=googlecolab)
+[![Docs](https://img.shields.io/badge/docs-website-173a5e)](https://n-nieto.github.io/Inner_Speech_Dataset/)
 
 ---
 
@@ -13,6 +14,7 @@
 The **Inner Speech Dataset** is an **EEG-based open-access dataset** for inner speech recognition.  
 This repository provides scripts to **download, preprocess, explore, and analyze** the dataset.  
 
+- Documentation: [n-nieto.github.io/Inner_Speech_Dataset](https://n-nieto.github.io/Inner_Speech_Dataset/) (the experiment, the files and the code, with interactive figures)  
 - Dataset: [OpenNeuro](https://openneuro.org/datasets/ds003626)  
 - Publication: [Nieto et al., Scientific Data, 2022](https://www.nature.com/articles/s41597-022-01147-2)  
 
