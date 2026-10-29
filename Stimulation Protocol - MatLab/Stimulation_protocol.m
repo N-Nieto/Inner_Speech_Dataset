@@ -54,7 +54,7 @@ T_Estimulo=2;
 % Tiempo útil de grabacion
 T_Imaginacion=2.5;
 % Desaparece el estimulo pero permanece la fix coss (sin parpadeo)
-% Interlvalo útil para caracterizar el baseline de EEG
+% Intervalo útil para caracterizar el baseline de EEG
 T_Concentracion2=1;
 % Tiempo de descanso InterTrial variable (Se permite parpadeo)
 T_Descanso_min=1.5;
@@ -76,7 +76,7 @@ Experiment.Tiempos.T_baseline= T_baseline;
 Experiment.Tiempos.T_Descanso_Interbloque= T_Descanso_Interbloque;
 
 %% ----------------- Matrices de Estimulacion y modalidad -----------------
-% Vector de estimuo
+% Vector de estimulo
 Est=1:N_classes;
 Est=repmat(Est,[1,TriasxRuns]);
 % Modalidad por bloque
@@ -145,7 +145,7 @@ screenNumber = max(screens);
 % Define black % white
 % Open an on screen window and color it black
 [window, windowRect] = PsychImaging('OpenWindow', screenNumber, Color_fondo);
-% Set the blend funciton for the screen
+% Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 % Flip to clear
 Screen('Flip', window);
@@ -159,9 +159,9 @@ Experiment.Psicotoolbox.xCenter= xCenter;
 Experiment.Psicotoolbox.yCenter= yCenter;
 Experiment.Psicotoolbox.screenNumber= screenNumber;
 %% Pregunta de concentración
-% Cantidad minima de trials para realizar una regunta
+% Cantidad minima de trials para realizar una pregunta
 min_q=3;
-% Cantidad maxima de trials para realizar una regunta
+% Cantidad maxima de trials para realizar una pregunta
 max_q=4;
 max_q= min(max_q,N_trials_bloque);
 min_q=min(min_q,max_q);

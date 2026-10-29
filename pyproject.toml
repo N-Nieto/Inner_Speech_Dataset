@@ -1,0 +1,119 @@
+[project]
+name = "inner-speech-dataset"
+version = "0.1.0"
+description = "Download, preprocess and analyse the Inner Speech EEG dataset (OpenNeuro ds003626)"
+readme = "README.md"
+license-files = ["LICENSE"]
+authors = [{ name = "Nicolás Nieto", email = "n.nieto@fz-juelich.de" }]
+requires-python = ">=3.11"
+# Lower bounds = oldest versions the code was tested with
+dependencies = [
+    "mne>=1.7",          # Epochs.compute_tfr / compute_psd, vlim= in TFR plots
+    "numpy>=1.26",
+    "pandas>=1.5",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "h5io>=0.2",         # saving/reading PSD and TFR results (.h5)
+    "joblib>=1.3",       # parallel filtering (N_JOBS in InnerSpeech_preprocessing.py)
+]
+
+[project.optional-dependencies]
+# Download helpers (innerspeech.download_helper and the *_tutorial.py files)
+download = [
+    "datalad>=1.0",
+    "git-annex>=10.20250101",  # wheels for Linux (glibc >= 2.34), macOS and Windows
+    "tqdm>=4.60",
+]
+# Database_exploration_tutorial.ipynb
+notebook = [
+    "scikit-learn>=1.3",
+    "ipykernel>=6",
+]
+
+[project.urls]
+Repository = "https://github.com/N-Nieto/Inner_Speech_Dataset"
+Dataset = "https://openneuro.org/datasets/ds003626"
+Paper = "https://doi.org/10.1038/s41597-022-01147-2"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15",
+    "codespell>=2.4",
+    "pytest>=8",
+    "edfio>=0.4",                 # BDF export for the synthetic test recordings
+    "bids-validator-deno>=3",     # BIDS validator used by the tests and bids/
+]
+# Documentation website (mkdocs.yml, docs/): uv sync --group docs; uv run mkdocs serve
+docs = [
+    "mkdocs>=1.6,<2",             # MkDocs 2 drops the plugin system Material relies on
+    "mkdocs-material>=9.6",
+    "mkdocstrings[python]>=0.29",
+    "ruff>=0.15",                 # formats the signatures in the API reference
+]
+
+# The shared code lives in the `innerspeech` package (src/innerspeech); the
+# scripts in Python_Processing/ and the tutorials import it. Install the repo
+# in editable mode so changes to the package are picked up immediately:
+#   uv sync --all-extras          or          pip install -e ".[download,notebook]"
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv]
+default-groups = ["dev"]
+# Platforms uv.lock is resolved for (keeps the lockfile small). pip installs are
+# not affected; add a line here to support another platform with `uv sync`.
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64' and implementation_name == 'cpython'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64' and implementation_name == 'cpython'",
+    "sys_platform == 'darwin' and implementation_name == 'cpython'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64' and implementation_name == 'cpython'",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = ["ignore::RuntimeWarning:mne"]
+
+[tool.ruff]
+# Lowest supported Python (requires-python); enables PEP 604/585 syntax
+target-version = "py311"
+line-length = 88
+# Lets isort recognise `innerspeech` (src/innerspeech) as first-party code
+src = ["src", "Python_Processing", "tests"]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade (typing.List -> list, Optional[X] -> X | None, ...)
+    "B",        # flake8-bugbear
+    "TRY",      # tryceratops (no bare `raise Exception`, ...)
+    "PTH",      # pathlib instead of os.path
+    "SIM",      # flake8-simplify
+    "C4",       # flake8-comprehensions
+    "RET",      # flake8-return
+    "PIE",      # flake8-pie
+    "PGH",      # pygrep-hooks (specific `# noqa` codes)
+    "RUF",      # ruff-specific (incl. unused `# noqa`)
+]
+ignore = [
+    "TRY003",   # long messages in exception calls are fine for a research codebase
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["innerspeech"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.codespell]
+# Run with: codespell   (spell-checks code, comments, docs and notebooks)
+skip = "uv.lock,LICENSE,.git,.venv,*.pyc,.ruff_cache"
+# NumPy function names that look like typos
+ignore-words-list = "arange"

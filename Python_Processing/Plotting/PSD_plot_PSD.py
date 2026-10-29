@@ -1,38 +1,35 @@
-# -*- coding: utf-8 -*-
-
 """
 @author: Nicolás Nieto - nnieto@sinc.unl.edu.ar
 
 PSD - Plotting
+
+Plot the multitaper power spectral density of one channel for several
+conditions (one line per condition, averaged over trials).
 """
 
-# In[] Imports modules
-import mne
+# %%
+from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from lib.data_extractions import (
-    extract_block_data_from_subject,
-    extract_data_from_subject,
-)
-from lib.data_processing import (
-    filter_by_condition,
-    filter_by_class,
-)
-from lib.utils import (
-    ensure_dir,
-    picks_from_channels,
-)
+from innerspeech.data_extractions import extract_condition_epochs
+from innerspeech.utils import find_project_root
 
-# In[] Imports modules
+# Folder that contains this repository, the dataset and the results
+try:
+    _HERE = Path(__file__).resolve().parent
+except NameError:  # run cell by cell or in Jupyter: no __file__
+    _HERE = Path.cwd()
+project_root = find_project_root(_HERE)
 
+# %%
 # Root where the data are stored
-root_dir = "../"
+data_dir = project_root / "ds003626"
+# Where the figures are written
+save_dir = project_root / "results" / "figures"
 
-save_dir = "../"
-
-# Subjets
+# Subjects
 N_S_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Data Parameters
@@ -40,10 +37,7 @@ datatype = "EEG"
 Condition_list = ["Inner", "Vis"]
 Classes_list = ["All"]
 channel = "A26"
-# Get picks for the selected channels
-picks = picks_from_channels(channel)
-picks = ["A26"]
-
+picks = [channel]
 
 save_bool = True
 prefix = "Power_Spectral_density_inner_vs_vis_beta"
@@ -53,7 +47,7 @@ random_state = 23
 np.random.seed(random_state)
 
 # Plotting
-# Time Windows
+# Time window in s, relative to the cue onset
 tmin = 1
 tmax = 3
 
@@ -65,74 +59,48 @@ y_max = 31
 bandwidth = 1
 fontsize = 23
 
-
 plt.rcParams.update({"font.size": fontsize})
 plt.rcParams.update({"legend.framealpha": 0})
 # "midnightblue" - "darkred" - "darkcyan" - "darkgreen"
 colors = ["darkred", "midnightblue"]
 
-# In[]: Fix Parameters
-
-N_B = 1
-N_S = 1
-# Load a single subject to use the Epoched Object structure
-X_S, Y = extract_block_data_from_subject(root_dir, N_S, datatype, N_B=N_B)
-
-Adquisition_eq = "biosemi128"
-montage = mne.channels.make_standard_montage(Adquisition_eq)
-X_S.set_montage(montage)
-
-# Load Data
+# %%
+# Load data and plot
 fig = plt.figure(figsize=[13, 10])
 axs = plt.axes()
 n_plot = 0
 for Classes in Classes_list:
     for Cond in Condition_list:
-        count = 1
-        for N_S in N_S_list:
-            # Load full subject's data
-            X, Y = extract_data_from_subject(root_dir, N_S, datatype)
+        epochs = extract_condition_epochs(
+            data_dir, N_S_list, datatype, condition=Cond, class_label=Classes
+        )
 
-            # Filter by condition
-            X_cond, Y_cond = filter_by_condition(X, Y, Condition=Cond)
+        color = colors[n_plot % len(colors)]
+        n_plot += 1
 
-            # Filter by class
-            X_class, Y_class = filter_by_class(X_cond, Y_cond, Class=Classes)
-
-            if count == 1:
-                X_data = X_class
-                Y_data = Y_class
-                count = 2
-            else:
-                X_data = np.vstack((X_data, X_class))
-                Y_data = np.vstack((Y_data, Y_class))
-
-        # Plotting
-        # Put all data
-        X_S._data = X_data
-        X_S.events = Y_data
-
-        color = colors[n_plot]
-        # for next color
-        n_plot = n_plot + 1
-
-        fig = X_S.plot_psd(
-            average=True,
-            dB=True,
-            estimate="power",
-            bandwidth=bandwidth,
-            color=color,
-            picks=picks,
+        epochs.compute_psd(
+            method="multitaper",
             fmin=fmin,
             fmax=fmax,
             tmin=tmin,
             tmax=tmax,
-            ax=axs,
+            picks=picks,
+            bandwidth=bandwidth,
+        ).plot(
+            average=True,
+            dB=True,
+            amplitude=False,
+            color=color,
+            picks=picks,
+            axes=axs,
+            show=False,
         )
 
-# Saving
+# Legend: one entry per plotted mean line (MNE also draws black reference lines)
+mean_lines = [line for line in axs.get_lines() if line.get_color() in colors]
 axs.legend(
-    ["Inner Speech", "Visualized"],
+    mean_lines,
+    ["Inner Speech", "Visualized"][:n_plot],
     loc="upper right",
     borderaxespad=0.9,
     fontsize=fontsize,
@@ -146,5 +114,5 @@ fig.suptitle(title)
 
 # Save Figure
 if save_bool:
-    ensure_dir(save_dir)
-    fig.savefig(save_dir + prefix + "_" + channel + "_.png", transparent=True)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_dir / f"{prefix}_{channel}_.png", transparent=True)

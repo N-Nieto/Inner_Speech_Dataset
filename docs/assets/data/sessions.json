@@ -1,0 +1,1410 @@
+{
+ "sessions": [
+  {
+   "subject": 1,
+   "session": 1,
+   "format": "json",
+   "age": 56,
+   "gender": "F",
+   "recording_time": 1832,
+   "answers_right": 43,
+   "answers_wrong": 2,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 4
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 2
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 6,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 63898,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    }
+   ]
+  },
+  {
+   "subject": 1,
+   "session": 2,
+   "format": "json",
+   "age": 56,
+   "gender": "F",
+   "recording_time": 1670,
+   "answers_right": 10,
+   "answers_wrong": 2,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 2
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 4
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 6,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    }
+   ]
+  },
+  {
+   "subject": 1,
+   "session": 3,
+   "format": "legacy",
+   "age": 56,
+   "gender": "F",
+   "recording_time": 970,
+   "answers_right": 4,
+   "answers_wrong": 0,
+   "trials": 100,
+   "conditions": {
+    "pronounced": {
+     "trials": 20,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 40,
+     "emg_tagged": 1
+    }
+   },
+   "classes": {
+    "up": 25,
+    "down": 25,
+    "right": 25,
+    "left": 25
+   },
+   "emg_tagged": 1,
+   "cue_inferred": null,
+   "corrections": null
+  },
+  {
+   "subject": 2,
+   "session": 1,
+   "format": "json",
+   "age": 50,
+   "gender": "M",
+   "recording_time": 1631,
+   "answers_right": 11,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 27
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 11
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 38,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 582738,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    }
+   ]
+  },
+  {
+   "subject": 2,
+   "session": 2,
+   "format": "json",
+   "age": 50,
+   "gender": "M",
+   "recording_time": 1653,
+   "answers_right": 15,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    }
+   ]
+  },
+  {
+   "subject": 2,
+   "session": 3,
+   "format": "json",
+   "age": 50,
+   "gender": "M",
+   "recording_time": 1644,
+   "answers_right": 15,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 2
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 2
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 4,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    }
+   ]
+  },
+  {
+   "subject": 3,
+   "session": 1,
+   "format": "json",
+   "age": 34,
+   "gender": "M",
+   "recording_time": 1632,
+   "answers_right": 11,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 120,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 529348,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    }
+   ]
+  },
+  {
+   "subject": 3,
+   "session": 2,
+   "format": "legacy",
+   "age": 34,
+   "gender": "M",
+   "recording_time": 1636,
+   "answers_right": 9,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 1
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 1,
+   "cue_inferred": null,
+   "corrections": null
+  },
+  {
+   "subject": 3,
+   "session": 3,
+   "format": "json",
+   "age": 34,
+   "gender": "M",
+   "recording_time": 960,
+   "answers_right": 8,
+   "answers_wrong": 0,
+   "trials": 100,
+   "conditions": {
+    "pronounced": {
+     "trials": 20,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 60,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 20,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 25,
+    "down": 25,
+    "right": 25,
+    "left": 25
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 87222,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    }
+   ]
+  },
+  {
+   "subject": 4,
+   "session": 1,
+   "format": "json",
+   "age": 24,
+   "gender": "F",
+   "recording_time": 1618,
+   "answers_right": 11,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 611370,
+     "code": 61,
+     "action": "inserted",
+     "reason": "missing answer"
+    }
+   ]
+  },
+  {
+   "subject": 4,
+   "session": 2,
+   "format": "json",
+   "age": 24,
+   "gender": "F",
+   "recording_time": 1648,
+   "answers_right": 14,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    }
+   ]
+  },
+  {
+   "subject": 4,
+   "session": 3,
+   "format": "legacy",
+   "age": 24,
+   "gender": "F",
+   "recording_time": 1638,
+   "answers_right": 13,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 1
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 1,
+   "cue_inferred": null,
+   "corrections": null
+  },
+  {
+   "subject": 5,
+   "session": 1,
+   "format": "json",
+   "age": 30,
+   "gender": "F",
+   "recording_time": 1623,
+   "answers_right": 12,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 1,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1350656,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 48916,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    },
+    {
+     "sample": 710947,
+     "code": 33,
+     "action": "inserted",
+     "reason": "missing cue (class recorded least often in the session)"
+    },
+    {
+     "sample": 1223889,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    },
+    {
+     "sample": 1470188,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    }
+   ]
+  },
+  {
+   "subject": 5,
+   "session": 2,
+   "format": "json",
+   "age": 30,
+   "gender": "F",
+   "recording_time": 1612,
+   "answers_right": 10,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 106726,
+     "code": 45,
+     "action": "inserted",
+     "reason": "missing relax"
+    }
+   ]
+  },
+  {
+   "subject": 5,
+   "session": 3,
+   "format": "json",
+   "age": 30,
+   "gender": "F",
+   "recording_time": 1655,
+   "answers_right": 12,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 1
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 1,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    }
+   ]
+  },
+  {
+   "subject": 6,
+   "session": 1,
+   "format": "json",
+   "age": 29,
+   "gender": "M",
+   "recording_time": 1609,
+   "answers_right": 11,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 9
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 2
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 11,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 298502,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    },
+    {
+     "sample": 917835,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 6,
+   "session": 2,
+   "format": "json",
+   "age": 29,
+   "gender": "M",
+   "recording_time": 1632,
+   "answers_right": 12,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 1,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1228833,
+     "code": 34,
+     "action": "inserted",
+     "reason": "missing cue (class recorded least often in the session)"
+    }
+   ]
+  },
+  {
+   "subject": 6,
+   "session": 3,
+   "format": "json",
+   "age": 29,
+   "gender": "M",
+   "recording_time": 1196,
+   "answers_right": 9,
+   "answers_wrong": 0,
+   "trials": 140,
+   "conditions": {
+    "pronounced": {
+     "trials": 28,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 56,
+     "emg_tagged": 10
+    },
+    "visualized": {
+     "trials": 56,
+     "emg_tagged": 1
+    }
+   },
+   "classes": {
+    "up": 35,
+    "down": 35,
+    "right": 35,
+    "left": 35
+   },
+   "emg_tagged": 11,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1183506,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 7,
+   "session": 1,
+   "format": "json",
+   "age": 26,
+   "gender": "M",
+   "recording_time": 1615,
+   "answers_right": 12,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1374919,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 7,
+   "session": 2,
+   "format": "json",
+   "age": 26,
+   "gender": "M",
+   "recording_time": 1607,
+   "answers_right": 11,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 77601,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    },
+    {
+     "sample": 543388,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 7,
+   "session": 3,
+   "format": "json",
+   "age": 26,
+   "gender": "M",
+   "recording_time": 1655,
+   "answers_right": 15,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 1,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 50381,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    },
+    {
+     "sample": 106289,
+     "code": 34,
+     "action": "inserted",
+     "reason": "missing cue (class recorded least often in the session)"
+    },
+    {
+     "sample": 890327,
+     "code": 61,
+     "action": "inserted",
+     "reason": "missing answer"
+    },
+    {
+     "sample": 1120430,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    }
+   ]
+  },
+  {
+   "subject": 8,
+   "session": 1,
+   "format": "json",
+   "age": 28,
+   "gender": "F",
+   "recording_time": 1619,
+   "answers_right": 12,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 1,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1041723,
+     "code": 34,
+     "action": "inserted",
+     "reason": "missing cue (class recorded least often in the session)"
+    },
+    {
+     "sample": 1355945,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    }
+   ]
+  },
+  {
+   "subject": 8,
+   "session": 2,
+   "format": "legacy",
+   "age": 28,
+   "gender": "F",
+   "recording_time": 1651,
+   "answers_right": 11,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": null,
+   "corrections": null
+  },
+  {
+   "subject": 8,
+   "session": 3,
+   "format": "json",
+   "age": 28,
+   "gender": "F",
+   "recording_time": 960,
+   "answers_right": 7,
+   "answers_wrong": 1,
+   "trials": 100,
+   "conditions": {
+    "pronounced": {
+     "trials": 20,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 40,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 25,
+    "down": 25,
+    "right": 25,
+    "left": 25
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 250276,
+     "code": 46,
+     "action": "inserted",
+     "reason": "missing rest"
+    }
+   ]
+  },
+  {
+   "subject": 9,
+   "session": 1,
+   "format": "json",
+   "age": 35,
+   "gender": "M",
+   "recording_time": 1625,
+   "answers_right": 12,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 5
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 3
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 8,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 731149,
+     "code": 45,
+     "action": "inserted",
+     "reason": "missing relax"
+    },
+    {
+     "sample": 772654,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 9,
+   "session": 2,
+   "format": "json",
+   "age": 35,
+   "gender": "M",
+   "recording_time": 1597,
+   "answers_right": 10,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 2
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 2
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 4,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 65558,
+     "code": 42,
+     "action": "inserted",
+     "reason": "missing trial_start"
+    }
+   ]
+  },
+  {
+   "subject": 9,
+   "session": 3,
+   "format": "json",
+   "age": 35,
+   "gender": "M",
+   "recording_time": 1619,
+   "answers_right": 13,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 8
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 7
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 15,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1210005,
+     "code": 45,
+     "action": "inserted",
+     "reason": "missing relax"
+    }
+   ]
+  },
+  {
+   "subject": 10,
+   "session": 1,
+   "format": "json",
+   "age": 31,
+   "gender": "M",
+   "recording_time": 1601,
+   "answers_right": 10,
+   "answers_wrong": 1,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 1
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 6
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 7,
+   "cue_inferred": 1,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 31517,
+     "code": 14,
+     "action": "inserted",
+     "reason": "missing baseline_end"
+    },
+    {
+     "sample": 251175,
+     "code": 31,
+     "action": "inserted",
+     "reason": "missing cue (class recorded least often in the session)"
+    }
+   ]
+  },
+  {
+   "subject": 10,
+   "session": 2,
+   "format": "json",
+   "age": 31,
+   "gender": "M",
+   "recording_time": 1617,
+   "answers_right": 11,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 0
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 0,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 175631,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    },
+    {
+     "sample": 434696,
+     "code": 44,
+     "action": "inserted",
+     "reason": "missing action"
+    }
+   ]
+  },
+  {
+   "subject": 10,
+   "session": 3,
+   "format": "json",
+   "age": 31,
+   "gender": "M",
+   "recording_time": 1602,
+   "answers_right": 10,
+   "answers_wrong": 0,
+   "trials": 200,
+   "conditions": {
+    "pronounced": {
+     "trials": 40,
+     "emg_tagged": 0
+    },
+    "inner": {
+     "trials": 80,
+     "emg_tagged": 1
+    },
+    "visualized": {
+     "trials": 80,
+     "emg_tagged": 0
+    }
+   },
+   "classes": {
+    "up": 50,
+    "down": 50,
+    "right": 50,
+    "left": 50
+   },
+   "emg_tagged": 1,
+   "cue_inferred": 0,
+   "corrections": [
+    {
+     "sample": 0,
+     "code": 65536,
+     "action": "ignored",
+     "reason": "hardware artefact"
+    },
+    {
+     "sample": 1459920,
+     "code": 45,
+     "action": "inserted",
+     "reason": "missing relax"
+    }
+   ]
+  }
+ ]
+}

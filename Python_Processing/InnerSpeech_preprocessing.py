@@ -1,55 +1,54 @@
-# -*- coding: utf-8 -*-
 # %%
 """
 @author: Nicolás Nieto
 
-We present a processing pipeline for the Inner Speech dataset that converts raw data into a
-structured BIDS-compliant dataset stored in the "derivatives" folder.
+We present a processing pipeline for the Inner Speech dataset that converts raw data
+into a structured BIDS-compliant dataset stored in the "derivatives" folder.
 
 Prerequisites:
 Ensure you have downloaded the dataset from OpenNeuro.
-A helper script (Raw_data_download_tutorial.py) is available to facilitate downloading the raw data.
-If you prefer not to reprocess the data, you can download the preprocessed derivatives directly using another script (Derivatives_download_tutorial.py).
+A helper script (Raw_data_download_tutorial.py) is available to facilitate downloading
+the raw data.
+If you prefer not to reprocess the data, you can download the preprocessed derivatives
+directly using another script (Derivatives_download_tutorial.py).
 
 Preprocessing Steps:
-    1. Event extraction and correction
+    1. Event extraction and correction (innerspeech.events_analysis), with the
+       per-session exceptions listed in innerspeech.protocol.KNOWN_ISSUES
+       (e.g. sub-03 ses-01, who performed one inner speech run as visualized)
     2. EEG re-referencing
     3. 50 Hz notch filter (Argentina power line frequency)
     4. Bandpass filtering (low-cut and high-cut)
-    5. ICA-FIX processing using all components (computationally intensive)
-    6. Ad hoc correction for subjects who performed the tasks in another order
+    5. Epoching and decimation
+    6. ICA artifact removal (computationally intensive, hours per session)
     7. EMG validation using single threshold
-    8. Report generation and saving
+    8. Saving: epochs (*-epo.fif), trial table (events.tsv) and report
+       (report.json); see innerspeech.derivatives_io for the formats
+
+All processing options are the variables at the top of the script; change them
+and re-run to obtain your own derivatives (save them to another folder with
+``save_dir`` to keep the published ones).
 """
 
 # Imports modules
-import mne
-import pickle
-import numpy as np
+import gc
 from pathlib import Path
 
-from lib.events_analysis import (
-    event_correction,
-    add_condition_tag,
-    add_block_tag,
-    delete_trigger_column,
-    check_baseline_tags,
-    cognitive_control_check,
-    standardize_labels,
-)
+import mne
 
-from lib.data_extractions import (
-    extract_subject_from_bdf,
-    get_age_gender,
-    get_events_from_raw,
-)
-from lib.utils import ensure_dir
-from lib.AdHoc_modification import (
-    adhoc_subject_3,
-)
-from lib.EMG_Control import EMG_control_single_th
+from innerspeech.data_extractions import extract_subject_from_bdf, get_age_gender
+from innerspeech.derivatives_io import derivative_path, save_events, save_report
+from innerspeech.emg_control import EMG_control_single_th
+from innerspeech.events_analysis import mne_events, process_session_events
+from innerspeech.utils import find_project_root
 
-project_root = Path().resolve().parents[1]
+# Folder that contains this repository and the dataset (ds003626). Resolved from
+# this file's location, so it does not depend on the working directory.
+try:
+    _HERE = Path(__file__).resolve().parent
+except NameError:  # run cell by cell or in Jupyter: no __file__
+    _HERE = Path.cwd()
+project_root = find_project_root(_HERE)
 # %%
 # Processing Variables
 
@@ -60,7 +59,8 @@ data_dir = project_root / "ds003626"
 # It can be changed and saved in other direction
 save_dir = data_dir / "derivatives"
 
-# Subjects and blacks. Subjects range from 1 to 10 (no subject 0). Blocks range from 1 to 3, (no block 0)
+# Subjects and blocks. Subjects range from 1 to 10 (no subject 0).
+# Blocks range from 1 to 3, (no block 0)
 N_Subj_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 N_block_arr = [1, 2, 3]
 
@@ -77,19 +77,29 @@ NOTCH_BOOL = True
 DS_RATE = 4
 
 # #################### ICA
-# If False, ICA is not applyed
-ICA_BOOL = False
+# If False, ICA is not applied
+ICA_BOOL = True
 ICA_COMPONENTS = None  # Use None to automatic selection
 ICA_METHOD = "infomax"
 MAX_PCA_COMPONENTS = None
 RANDOM_STATE = 23
-fit_params = dict(extended=True)
+fit_params = {"extended": True}
+
+# #################### Parallel processing
+# CPU cores used for filtering (-1 = all cores, 1 = a single core).
+# The results do not depend on this value.
+N_JOBS = -1
+
+# #################### Output files
+# Also write the files of releases up to 2.1.2 (events.dat, report.pkl) next to
+# events.tsv and report.json, for code that reads them
+SAVE_LEGACY_FILES = True
 
 # #################### EMG Control
 EMG_FILTER_LOW_CUT = 1
 EMG_FILTER_HIGH_CUT = 20
 
-# Slide window desing
+# Slide window design
 # Window len (time in sec)
 WINDOW_LEN = 0.5
 # slide window step (time in sec)
@@ -99,7 +109,7 @@ WINDOW_STEP = 0.05
 STD_TIMES = 3  # How many times the std to set the threshold
 
 # %%
-# ------------------ Fixed variables from the adquisition process ------------------
+# ------------------ Fixed variables from the acquisition process ------------------
 
 # Baseline
 T_MIN_BASELINE = 0
@@ -115,18 +125,15 @@ T_MAX = 3.5
 # 32 = Abajo / Down
 # 33 = Derecha / Right
 # 34 = Izquierda / Left
-event_id = dict(Arriba=31, Abajo=32, Derecha=33, Izquierda=34)
+event_id = {"Arriba": 31, "Abajo": 32, "Derecha": 33, "Izquierda": 34}
 
 # Baseline id
-baseline_id = dict(Baseline=13)
-
-# Report initialization
-report = dict(Age=None, Gender="-", Recording_time=None, Ans_R=None, Ans_W=None)
+baseline_id = {"Baseline": 13}
 
 # Montage
-ADQUISITION_EQ = "biosemi128"
+ACQUISITION_EQ = "biosemi128"
 # Get montage
-MONTAGE = mne.channels.make_standard_montage(ADQUISITION_EQ)
+MONTAGE = mne.channels.make_standard_montage(ACQUISITION_EQ)
 
 # Extern channels
 Ref_channels = ["EXG1", "EXG2"]
@@ -140,93 +147,68 @@ Blinks_channels = ["EXG5", "EXG6"]
 # Mouth Moving detection
 Mouth_channels = ["EXG7", "EXG8"]
 
+# All external channels
+EXG_channels = Ref_channels + Gaze_channels + Blinks_channels + Mouth_channels
+
 # %%
 # ------------------ Processing loop ------------------
 
 for N_S in N_Subj_arr:
-    # Get Age and Gender
-    report["Age"], report["Gender"] = get_age_gender(N_S)
+    age, gender = get_age_gender(N_S)
 
     for N_B in N_block_arr:
-        print("Subject: " + str(N_S))
-        print("Session: " + str(N_B))
+        print(f"Subject {N_S}, session {N_B}")
 
         # Load data from BDF file
-        rawdata, Num_s = extract_subject_from_bdf(data_dir, N_S, N_B)
+        rawdata, _ = extract_subject_from_bdf(data_dir, N_S, N_B)
 
-        # Get raw events
-        events = get_events_from_raw(rawdata, N_S, N_B)
-        print("Checking Events")
-        # Check and Correct baseline tags
-        events = check_baseline_tags(events)
-
-        # Check and Correct event
-        events = event_correction(events=events)
-
-        event_array = events.to_numpy()
-        event_array = np.array(event_array, dtype=int)
-        # replace the raw events with the new corrected events
-        rawdata.event = event_array
-
-        report["Recording_time"] = int(
-            np.round(rawdata.last_samp / rawdata.info["sfreq"])
-        )
-
-        # Cognitive Control
-        report["Ans_R"], report["Ans_W"] = cognitive_control_check(events)
-        print("Check done")
+        # Events: read, corrected against the protocol, and the trial table
+        # (one row per cue). The report gets the recording time, the answers
+        # to the cognitive control questions and the list of corrections.
+        events, trials, session_report = process_session_events(rawdata, N_S, N_B)
+        event_array = mne_events(events)
+        report = {"Age": age, "Gender": gender, **session_report}
+        print(f"{len(trials)} trials, {len(report['Event_corrections'])} corrections")
         # %%
         # Referencing
         rawdata.set_eeg_reference(ref_channels=Ref_channels)
         if NOTCH_BOOL:
             # Notch filter
-            rawdata = mne.io.Raw.notch_filter(rawdata, freqs=50)
+            rawdata.notch_filter(freqs=50, n_jobs=N_JOBS)
 
         if FILTER_BOOL:
             # Filtering raw data
-            rawdata.filter(LOW_CUT, HIGH_CUT)
+            rawdata.filter(LOW_CUT, HIGH_CUT, n_jobs=N_JOBS)
         # %%
-        # Save report
-        file_path = save_dir / (Num_s + "/ses-0" + str(N_B))
-        ensure_dir(str(file_path))
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_report.pkl")
-        with open(file_name, "wb") as output:
-            pickle.dump(report, output, pickle.HIGHEST_PROTOCOL)
+        # Save report (also creates the session folder)
+        save_report(report, save_dir, N_S, N_B, legacy=SAVE_LEGACY_FILES)
 
-        print("Processing EXG")
-        # EXG
-        #  the EXG Channels for saving
-        picks_eog = mne.pick_types(
-            rawdata.info,
-            eeg=False,
-            stim=False,
-            include=["EXG1", "EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"],
-        )
-        epochsEOG = mne.Epochs(
+        # %%
+        print("Epoching")
+        # Every epoch set is cut from the continuous data here, so the
+        # recording can be released before the (slow) ICA.
+
+        # EXG: baseline-corrected with the 0.5 s before the cue. The correction
+        # is applied at the original sampling rate, before decimating, so these
+        # trials are cut separately from the EEG ones (8 channels, cheap).
+        epochsEXG = mne.Epochs(
             rawdata,
             event_array,
             event_id=event_id,
             tmin=-0.5,
             tmax=4,
-            picks=picks_eog,
+            picks=EXG_channels,
             preload=True,
             detrend=0,
             decim=DS_RATE,
         )
 
-        # Save EOG
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_exg-epo.fif")
-        epochsEOG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
-        del epochsEOG
-        print("EXG Saved")
-        print("Processing Baseline")
-        # Baseline
-        # Extract Baseline
-        # Calculate the Baseline time
+        # Baseline: the rest period between events 13 and 14, EEG + EXG channels
+        # (releases up to 2.1.2 also kept the Status/trigger channel)
         t_baseline = (
             event_array[event_array[:, 2] == 14, 0]
             - event_array[event_array[:, 2] == 13, 0]
-        ) / rawdata.info["sfreq"]  # noqa
+        ) / rawdata.info["sfreq"]
         t_baseline = t_baseline[0]
         Baseline = mne.Epochs(
             rawdata,
@@ -234,75 +216,59 @@ for N_S in N_Subj_arr:
             event_id=baseline_id,
             tmin=0,
             tmax=round(t_baseline),
-            picks="all",
+            picks=mne.pick_types(
+                rawdata.info, eeg=True, stim=False, include=EXG_channels
+            ),
             preload=True,
             detrend=0,
             decim=DS_RATE,
             baseline=None,
         )
 
-        # Save Baseline
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_baseline-epo.fif")
-        Baseline.save(file_name, fmt="double", split_size="2GB", overwrite=True)
-        del Baseline
-        print("Baseline Saved")
-        print("Processing EEG")
-        # Epoching and decimating EEG
-        picks_eeg = mne.pick_types(
-            rawdata.info,
-            eeg=True,
-            exclude=["EXG1", "EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"],
-            stim=False,
-        )
-
-        epochsEEG = mne.Epochs(
+        # EEG and EXG trials, cut and decimated once, without baseline
+        # correction. The EEG derivative is taken from these trials; ICA also
+        # uses the EXG channels to find the artifact components.
+        epochsAll = mne.Epochs(
             rawdata,
             event_array,
             event_id=event_id,
             tmin=-0.5,
             tmax=4,
-            picks=picks_eeg,
+            picks=mne.pick_types(
+                rawdata.info, eeg=True, stim=False, include=EXG_channels
+            ),
             preload=True,
             detrend=0,
             decim=DS_RATE,
             baseline=None,
         )
 
-        # ICA Prosessing
+        # The continuous recording is no longer needed: free its memory
+        del rawdata
+        gc.collect()
 
+        # Save EXG and Baseline
+        epochsEXG.save(
+            derivative_path(save_dir, N_S, N_B, "exg-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        Baseline.save(
+            derivative_path(save_dir, N_S, N_B, "baseline-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        del epochsEXG, Baseline
+        print("EXG and Baseline saved")
+
+        # EEG: the trials above without the EXG channels
+        print("Processing EEG")
+        epochsEEG = epochsAll.copy().drop_channels(EXG_channels)
+
+        # ICA Processing
         if ICA_BOOL:
-            # Get a full trials including EXG channels
-            picks_vir = mne.pick_types(
-                rawdata.info,
-                eeg=True,
-                include=[
-                    "EXG1",
-                    "EXG2",
-                    "EXG3",
-                    "EXG4",
-                    "EXG5",
-                    "EXG6",
-                    "EXG7",
-                    "EXG8",
-                ],
-                stim=False,
-            )
-            epochsEEG_full = mne.Epochs(
-                rawdata,
-                event_array,
-                event_id=event_id,
-                tmin=-0.5,
-                tmax=4,
-                picks=picks_vir,
-                preload=True,
-                detrend=0,
-                decim=DS_RATE,
-                baseline=None,
-            )
-
-            # Liberate Memory for ICA processing
-            del rawdata
-
             # Creating the ICA object
             ica = mne.preprocessing.ICA(
                 n_components=ICA_COMPONENTS,
@@ -313,68 +279,34 @@ for N_S in N_Subj_arr:
 
             # Fit ICA, calculate components
             ica.fit(epochsEEG)
+
+            # Components correlated with the gaze, blink and mouth channels
             ica.exclude = []
+            for ch_name in Gaze_channels + Blinks_channels + Mouth_channels:
+                exg_inds, _ = ica.find_bads_eog(epochsAll, ch_name=ch_name)
+                ica.exclude.extend(exg_inds)
 
-            # Detect sources by correlation
-            exg_inds_EXG3, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG3"
-            )
-            ica.exclude.extend(exg_inds_EXG3)
-
-            # Detect sources by correlation
-            exg_inds_EXG4, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG4"
-            )
-            ica.exclude.extend(exg_inds_EXG4)
-
-            # Detect sources by correlation
-            exg_inds_EXG5, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG5"
-            )
-            ica.exclude.extend(exg_inds_EXG5)
-
-            # Detect sources by correlation
-            exg_inds_EXG6, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG6"
-            )
-            ica.exclude.extend(exg_inds_EXG6)
-
-            # Detect sources by correlation
-            exg_inds_EXG7, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG7"
-            )
-            ica.exclude.extend(exg_inds_EXG7)
-
-            # Detect sources by correlation
-            exg_inds_EXG8, scores_ica = ica.find_bads_eog(
-                epochsEEG_full, ch_name="EXG8"
-            )
-            ica.exclude.extend(exg_inds_EXG8)
-
-            print("Appling ICA")
+            print("Applying ICA")
             ica.apply(epochsEEG)
+            del ica
+        del epochsAll
 
         # Save EEG
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_eeg-epo.fif")
-        epochsEEG.save(file_name, fmt="double", split_size="2GB", overwrite=True)
+        epochsEEG.save(
+            derivative_path(save_dir, N_S, N_B, "eeg-epo.fif"),
+            fmt="double",
+            split_size="2GB",
+            overwrite=True,
+        )
+        del epochsEEG
+        gc.collect()
 
-        # Standarize and save events
-        events = add_condition_tag(events)
-        events = add_block_tag(events, N_B=N_B)
-        events = delete_trigger_column(events)
-        events = standardize_labels(events)
+        # Save the trial table: sample, class, condition, session, ...
+        save_events(trials, save_dir, N_S, N_B, legacy=SAVE_LEGACY_FILES)
 
-        # Save events
-        file_name = file_path / (Num_s + "_ses-0" + str(N_B) + "_events.dat")
-        events.to_csv(file_name)
-
-if 3 in N_Subj_arr:
-    #  Ad Hoc Modifications
-    adhoc_subject_3(root_dir=data_dir)
-
-# EMG Control
+# EMG Control (adds its results to events.tsv and the report)
 EMG_control_single_th(
-    root_dir=data_dir,
+    derivatives_dir=save_dir,
     N_Subj_arr=N_Subj_arr,
     N_block_arr=N_block_arr,
     low_f=EMG_FILTER_LOW_CUT,
@@ -386,6 +318,8 @@ EMG_control_single_th(
     std_times=STD_TIMES,
     t_min_baseline=T_MIN_BASELINE,
     t_max_baseline=T_MAX_BASELINE,
+    n_jobs=N_JOBS,
+    legacy=SAVE_LEGACY_FILES,
 )
 
 # %%

@@ -1,0 +1,727 @@
+{
+ "dataset": "ds003626",
+ "version": "2.2.0",
+ "source": "Files of version 2.1.2, with the 30 baseline-epo.fif (Status channel removed) and the 3 sub-05 report.pkl (age 30) of the next release; check against the OpenNeuro git-annex keys once published",
+ "files": {
+  "derivatives/sub-01/ses-01/sub-01_ses-01_baseline-epo.fif": {
+   "size": 4209527,
+   "md5": "d04e1d218fcb7d5d254e7f12bd3a6099"
+  },
+  "derivatives/sub-01/ses-01/sub-01_ses-01_eeg-epo.fif": {
+   "size": 236165355,
+   "md5": "e6d9a6fdd51a980c22817c4b92debafd"
+  },
+  "derivatives/sub-01/ses-01/sub-01_ses-01_events.dat": {
+   "size": 6813,
+   "md5": "9dcd85cf6092aea81ecca9e8e9c7cab6"
+  },
+  "derivatives/sub-01/ses-01/sub-01_ses-01_exg-epo.fif": {
+   "size": 14775955,
+   "md5": "8818dd8bf6c13fe6c919f2337266da83"
+  },
+  "derivatives/sub-01/ses-01/sub-01_ses-01_report.pkl": {
+   "size": 615,
+   "md5": "fa2f251755510c9e383e68461686bf93"
+  },
+  "derivatives/sub-01/ses-02/sub-01_ses-02_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "acb59c7a026b81921eeda5302e750325"
+  },
+  "derivatives/sub-01/ses-02/sub-01_ses-02_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "b04c2abc7ad1d076604d75a4596acd60"
+  },
+  "derivatives/sub-01/ses-02/sub-01_ses-02_events.dat": {
+   "size": 6804,
+   "md5": "a5cca92c84f36907cd8aa1ae3cca4262"
+  },
+  "derivatives/sub-01/ses-02/sub-01_ses-02_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "0981f03d929762337d5e2e9d975e6105"
+  },
+  "derivatives/sub-01/ses-02/sub-01_ses-02_report.pkl": {
+   "size": 615,
+   "md5": "62267bbb4612998d71c54318badbb79a"
+  },
+  "derivatives/sub-01/ses-03/sub-01_ses-03_baseline-epo.fif": {
+   "size": 4201961,
+   "md5": "6cfe9d480e4d0c3e1c970d1869477abf"
+  },
+  "derivatives/sub-01/ses-03/sub-01_ses-03_eeg-epo.fif": {
+   "size": 118089889,
+   "md5": "3f0eba6c975b5d1b0958835d55fee9e6"
+  },
+  "derivatives/sub-01/ses-03/sub-01_ses-03_events.dat": {
+   "size": 3511,
+   "md5": "fcd7b5c1f13c74b803675d4261520384"
+  },
+  "derivatives/sub-01/ses-03/sub-01_ses-03_exg-epo.fif": {
+   "size": 7388489,
+   "md5": "ce0caf7e6d206127dc90a0f986323e57"
+  },
+  "derivatives/sub-01/ses-03/sub-01_ses-03_report.pkl": {
+   "size": 495,
+   "md5": "a648bd7d288c7d50e9918b32634a5258"
+  },
+  "derivatives/sub-02/ses-01/sub-02_ses-01_baseline-epo.fif": {
+   "size": 4208643,
+   "md5": "2f0bf3907c60fad5159fb7f39dff20f8"
+  },
+  "derivatives/sub-02/ses-01/sub-02_ses-01_eeg-epo.fif": {
+   "size": 236164471,
+   "md5": "34a99c2a1c3797c526b23ef50564e466"
+  },
+  "derivatives/sub-02/ses-01/sub-02_ses-01_events.dat": {
+   "size": 6820,
+   "md5": "0e911a95ff55dbd784d85e71075aa914"
+  },
+  "derivatives/sub-02/ses-01/sub-02_ses-01_exg-epo.fif": {
+   "size": 14775071,
+   "md5": "bfa5306b40c0cde4777e8f1a0c9c6e94"
+  },
+  "derivatives/sub-02/ses-01/sub-02_ses-01_report.pkl": {
+   "size": 1383,
+   "md5": "ef63e2ef5627b103fbae3a6dcd76243b"
+  },
+  "derivatives/sub-02/ses-02/sub-02_ses-02_baseline-epo.fif": {
+   "size": 4208773,
+   "md5": "432962c2ea0e442702520f683a29ea21"
+  },
+  "derivatives/sub-02/ses-02/sub-02_ses-02_eeg-epo.fif": {
+   "size": 236164601,
+   "md5": "b4aa5cab73b895e5a6990525eab66c41"
+  },
+  "derivatives/sub-02/ses-02/sub-02_ses-02_events.dat": {
+   "size": 6801,
+   "md5": "3f3fe954633b98e1f8a4991d082940ce"
+  },
+  "derivatives/sub-02/ses-02/sub-02_ses-02_exg-epo.fif": {
+   "size": 14775201,
+   "md5": "0f976f4b4e8470b45c06e68bf80872ea"
+  },
+  "derivatives/sub-02/ses-02/sub-02_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "ce95bdc881353a28c355131cf1f70848"
+  },
+  "derivatives/sub-02/ses-03/sub-02_ses-03_baseline-epo.fif": {
+   "size": 4208773,
+   "md5": "17f58ccd912d313cdb27fe95f38461e3"
+  },
+  "derivatives/sub-02/ses-03/sub-02_ses-03_eeg-epo.fif": {
+   "size": 236164601,
+   "md5": "7637fbc7fa44b27b411237ce390a95d6"
+  },
+  "derivatives/sub-02/ses-03/sub-02_ses-03_events.dat": {
+   "size": 6814,
+   "md5": "12ff537ef8a142ac22c2e890f70dd7f1"
+  },
+  "derivatives/sub-02/ses-03/sub-02_ses-03_exg-epo.fif": {
+   "size": 14775201,
+   "md5": "99b198d095074eee09debcfd5f216762"
+  },
+  "derivatives/sub-02/ses-03/sub-02_ses-03_report.pkl": {
+   "size": 567,
+   "md5": "6fd4ac4fd7836acabaf455cba017a6a4"
+  },
+  "derivatives/sub-03/ses-01/sub-03_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "3e67cf8b1147b0b3178ac8a2c84ce1d4"
+  },
+  "derivatives/sub-03/ses-01/sub-03_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "dc77820055b7c3c2fc8b938f0efa1e72"
+  },
+  "derivatives/sub-03/ses-01/sub-03_ses-01_events.dat": {
+   "size": 6813,
+   "md5": "518971f6b75e736dfe231d1d0ff6ff60"
+  },
+  "derivatives/sub-03/ses-01/sub-03_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "de5b35cbe18992bca32f4ea3a02853fc"
+  },
+  "derivatives/sub-03/ses-01/sub-03_ses-01_report.pkl": {
+   "size": 471,
+   "md5": "8b90b76ee97e7dd746af561c530bb957"
+  },
+  "derivatives/sub-03/ses-02/sub-03_ses-02_baseline-epo.fif": {
+   "size": 4208630,
+   "md5": "f8739d3c74a67b60c6aff722f4c1573f"
+  },
+  "derivatives/sub-03/ses-02/sub-03_ses-02_eeg-epo.fif": {
+   "size": 236164458,
+   "md5": "015f8a03959dfd2b352ef344c93543fc"
+  },
+  "derivatives/sub-03/ses-02/sub-03_ses-02_events.dat": {
+   "size": 6815,
+   "md5": "a320cbfac6f34383778f24c7e36a4c6f"
+  },
+  "derivatives/sub-03/ses-02/sub-03_ses-02_exg-epo.fif": {
+   "size": 14775058,
+   "md5": "d099fcf04d6fea2bef7227e6229798b3"
+  },
+  "derivatives/sub-03/ses-02/sub-03_ses-02_report.pkl": {
+   "size": 495,
+   "md5": "5a2ad17710b95d3307a357d1fee40331"
+  },
+  "derivatives/sub-03/ses-03/sub-03_ses-03_baseline-epo.fif": {
+   "size": 4202065,
+   "md5": "4f86a753fbf4fdd10524cb4ad93e1bd9"
+  },
+  "derivatives/sub-03/ses-03/sub-03_ses-03_eeg-epo.fif": {
+   "size": 118089993,
+   "md5": "24f0271b2d39e7931b201793aaa64ee5"
+  },
+  "derivatives/sub-03/ses-03/sub-03_ses-03_events.dat": {
+   "size": 3511,
+   "md5": "afbf007b86dbc367d6372663b51f4193"
+  },
+  "derivatives/sub-03/ses-03/sub-03_ses-03_exg-epo.fif": {
+   "size": 7388593,
+   "md5": "7bd79dc6515e8f467d4be7c889354c94"
+  },
+  "derivatives/sub-03/ses-03/sub-03_ses-03_report.pkl": {
+   "size": 471,
+   "md5": "4134a607dec7c3d54a72a54981c54105"
+  },
+  "derivatives/sub-04/ses-01/sub-04_ses-01_baseline-epo.fif": {
+   "size": 4208656,
+   "md5": "a2628ceb273d9eceaf36f25fe0b1db98"
+  },
+  "derivatives/sub-04/ses-01/sub-04_ses-01_eeg-epo.fif": {
+   "size": 236164484,
+   "md5": "905b9ddeeec60d7b1423f6f0914f2148"
+  },
+  "derivatives/sub-04/ses-01/sub-04_ses-01_events.dat": {
+   "size": 6812,
+   "md5": "4893e343b579ebe92732a74f6d2652aa"
+  },
+  "derivatives/sub-04/ses-01/sub-04_ses-01_exg-epo.fif": {
+   "size": 14775084,
+   "md5": "e4119fbfa7b3e09b520728bd26968fc4"
+  },
+  "derivatives/sub-04/ses-01/sub-04_ses-01_report.pkl": {
+   "size": 471,
+   "md5": "b1052ca6375458487ed858b8b1dd98ef"
+  },
+  "derivatives/sub-04/ses-02/sub-04_ses-02_baseline-epo.fif": {
+   "size": 4208721,
+   "md5": "40d56708754de8ff54d7c7822b95436e"
+  },
+  "derivatives/sub-04/ses-02/sub-04_ses-02_eeg-epo.fif": {
+   "size": 236164549,
+   "md5": "67e53c6dfaf165b90ff244f4182991e4"
+  },
+  "derivatives/sub-04/ses-02/sub-04_ses-02_events.dat": {
+   "size": 6807,
+   "md5": "ef4a64797d2f781e7ab60d13e0f5a6e1"
+  },
+  "derivatives/sub-04/ses-02/sub-04_ses-02_exg-epo.fif": {
+   "size": 14775149,
+   "md5": "c9a039bd9a08264f4a272d6a597c60c9"
+  },
+  "derivatives/sub-04/ses-02/sub-04_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "b252b4cad9f4fc61d1a22894e767cd7a"
+  },
+  "derivatives/sub-04/ses-03/sub-04_ses-03_baseline-epo.fif": {
+   "size": 4208708,
+   "md5": "0936a209ca5c46a6c1922513ed2bee73"
+  },
+  "derivatives/sub-04/ses-03/sub-04_ses-03_eeg-epo.fif": {
+   "size": 236164536,
+   "md5": "e06450babc4252d7d9f4e9aada3810b8"
+  },
+  "derivatives/sub-04/ses-03/sub-04_ses-03_events.dat": {
+   "size": 6808,
+   "md5": "f5b44205ba881549584ddf53a435244f"
+  },
+  "derivatives/sub-04/ses-03/sub-04_ses-03_exg-epo.fif": {
+   "size": 14775136,
+   "md5": "deea3c6219ef85ed28f91866a957a049"
+  },
+  "derivatives/sub-04/ses-03/sub-04_ses-03_report.pkl": {
+   "size": 495,
+   "md5": "89cc145cda7a4e50ee6884ed3e53b5c2"
+  },
+  "derivatives/sub-05/ses-01/sub-05_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "18b9b0c5eb4c1aa9dbb4fd365d02800a"
+  },
+  "derivatives/sub-05/ses-01/sub-05_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "3d7a290d85c574eebdaa27df8f39c269"
+  },
+  "derivatives/sub-05/ses-01/sub-05_ses-01_events.dat": {
+   "size": 6819,
+   "md5": "5e3f49a2088d9a009b6990b9bc21d7d8"
+  },
+  "derivatives/sub-05/ses-01/sub-05_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "3f0e9c20d80cbeb075d0aeb6cf40df9b"
+  },
+  "derivatives/sub-05/ses-01/sub-05_ses-01_report.pkl": {
+   "size": 507,
+   "md5": "e6f021ee0b94edfebeabe11bb4ce7289"
+  },
+  "derivatives/sub-05/ses-02/sub-05_ses-02_baseline-epo.fif": {
+   "size": 4208617,
+   "md5": "c5e3afc574e3d4f363fa2ee495bf7f85"
+  },
+  "derivatives/sub-05/ses-02/sub-05_ses-02_eeg-epo.fif": {
+   "size": 236164445,
+   "md5": "322ee9947921afaf4775c9520d5ec072"
+  },
+  "derivatives/sub-05/ses-02/sub-05_ses-02_events.dat": {
+   "size": 6809,
+   "md5": "1b45d6f160f5509248e17821790385e0"
+  },
+  "derivatives/sub-05/ses-02/sub-05_ses-02_exg-epo.fif": {
+   "size": 14775045,
+   "md5": "ed52f94320aeb93d0cad5d507658aa24"
+  },
+  "derivatives/sub-05/ses-02/sub-05_ses-02_report.pkl": {
+   "size": 507,
+   "md5": "93828dd4d686913510a0038994edec06"
+  },
+  "derivatives/sub-05/ses-03/sub-05_ses-03_baseline-epo.fif": {
+   "size": 4208695,
+   "md5": "8a06d546b83089f03c1f4570b2c6bff6"
+  },
+  "derivatives/sub-05/ses-03/sub-05_ses-03_eeg-epo.fif": {
+   "size": 236164523,
+   "md5": "3013928ef2849cb669553cd27bfe283e"
+  },
+  "derivatives/sub-05/ses-03/sub-05_ses-03_events.dat": {
+   "size": 6804,
+   "md5": "9a2510b63ddae26d38565d5d00b8d374"
+  },
+  "derivatives/sub-05/ses-03/sub-05_ses-03_exg-epo.fif": {
+   "size": 14775123,
+   "md5": "d7aa89ce5bf6bea53a059999cd758515"
+  },
+  "derivatives/sub-05/ses-03/sub-05_ses-03_report.pkl": {
+   "size": 531,
+   "md5": "d36549e51921a75c6d24d7adaa328952"
+  },
+  "derivatives/sub-06/ses-01/sub-06_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "9af5b3e17f3548e38e99a4ab425dfc53"
+  },
+  "derivatives/sub-06/ses-01/sub-06_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "3efe7145f2376a02679eb567bb398d16"
+  },
+  "derivatives/sub-06/ses-01/sub-06_ses-01_events.dat": {
+   "size": 6817,
+   "md5": "32641c644e14045fca0bb4862019b149"
+  },
+  "derivatives/sub-06/ses-01/sub-06_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "723d023acf2de90749e726b8e927d19b"
+  },
+  "derivatives/sub-06/ses-01/sub-06_ses-01_report.pkl": {
+   "size": 735,
+   "md5": "d47c877d2dda3950427078f0b3e5263a"
+  },
+  "derivatives/sub-06/ses-02/sub-06_ses-02_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "5c942c2ea0dd70ee32acd08cd457e30e"
+  },
+  "derivatives/sub-06/ses-02/sub-06_ses-02_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "612c45001df883381741ef7c8388a285"
+  },
+  "derivatives/sub-06/ses-02/sub-06_ses-02_events.dat": {
+   "size": 6811,
+   "md5": "5b9b40c33091908f483fca690bc00735"
+  },
+  "derivatives/sub-06/ses-02/sub-06_ses-02_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "2a6b674625f67eafc5e56ed3929809a6"
+  },
+  "derivatives/sub-06/ses-02/sub-06_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "7d160760cbbee321e79ff3d60eeb2480"
+  },
+  "derivatives/sub-06/ses-03/sub-06_ses-03_baseline-epo.fif": {
+   "size": 4204691,
+   "md5": "7c60d64728bfbbb04e113f6f9f4bcfb8"
+  },
+  "derivatives/sub-06/ses-03/sub-06_ses-03_eeg-epo.fif": {
+   "size": 165319779,
+   "md5": "c8bc64c7c2c56aed15a7cb4b23d5e55b"
+  },
+  "derivatives/sub-06/ses-03/sub-06_ses-03_events.dat": {
+   "size": 4824,
+   "md5": "70eb8a66f44e14df08297470bf0cd6ce"
+  },
+  "derivatives/sub-06/ses-03/sub-06_ses-03_exg-epo.fif": {
+   "size": 10343179,
+   "md5": "73f9543387d81122acb9676e1d0a890b"
+  },
+  "derivatives/sub-06/ses-03/sub-06_ses-03_report.pkl": {
+   "size": 735,
+   "md5": "f20a974acaceeba9cd43298df5992d5b"
+  },
+  "derivatives/sub-07/ses-01/sub-07_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "d9742d2fa83ad052d38dfca34bb22243"
+  },
+  "derivatives/sub-07/ses-01/sub-07_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "f37dc2c829d60a4db6237b114762495b"
+  },
+  "derivatives/sub-07/ses-01/sub-07_ses-01_events.dat": {
+   "size": 6812,
+   "md5": "882749190167bb2bf61c8eeafcc72b71"
+  },
+  "derivatives/sub-07/ses-01/sub-07_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "78452ce8e1765f984e706c1a66e6d2ca"
+  },
+  "derivatives/sub-07/ses-01/sub-07_ses-01_report.pkl": {
+   "size": 471,
+   "md5": "ba44b8a07711c042dda812d5501fc68b"
+  },
+  "derivatives/sub-07/ses-02/sub-07_ses-02_baseline-epo.fif": {
+   "size": 4208643,
+   "md5": "40272479e9b148a007a754f2e258d058"
+  },
+  "derivatives/sub-07/ses-02/sub-07_ses-02_eeg-epo.fif": {
+   "size": 236164471,
+   "md5": "037fafd6375a1b51de2ef0c917b0ca7c"
+  },
+  "derivatives/sub-07/ses-02/sub-07_ses-02_events.dat": {
+   "size": 6820,
+   "md5": "8a6f3611e493563fc7614cdee84ef223"
+  },
+  "derivatives/sub-07/ses-02/sub-07_ses-02_exg-epo.fif": {
+   "size": 14775071,
+   "md5": "7d28cabfda58edf4ce2ad0ea5d44b764"
+  },
+  "derivatives/sub-07/ses-02/sub-07_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "621370c8aa2396ffdae742e697eafb1c"
+  },
+  "derivatives/sub-07/ses-03/sub-07_ses-03_baseline-epo.fif": {
+   "size": 4208760,
+   "md5": "c9d6446b54c882c3ecdc4df6e3626c83"
+  },
+  "derivatives/sub-07/ses-03/sub-07_ses-03_eeg-epo.fif": {
+   "size": 236164588,
+   "md5": "8bf7c3b3293532254f846d3a78dd3c66"
+  },
+  "derivatives/sub-07/ses-03/sub-07_ses-03_events.dat": {
+   "size": 6801,
+   "md5": "306787eabcce01614cb558420939f8c8"
+  },
+  "derivatives/sub-07/ses-03/sub-07_ses-03_exg-epo.fif": {
+   "size": 14775188,
+   "md5": "141d7e87d5c96674ecc615585d665aae"
+  },
+  "derivatives/sub-07/ses-03/sub-07_ses-03_report.pkl": {
+   "size": 471,
+   "md5": "7a0f42c271839dc92f2006d40d382704"
+  },
+  "derivatives/sub-08/ses-01/sub-08_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "068c6cc648129081f69ceeede08dd39f"
+  },
+  "derivatives/sub-08/ses-01/sub-08_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "31cf1f5f8244a9fa8eda9575bb16e3c6"
+  },
+  "derivatives/sub-08/ses-01/sub-08_ses-01_events.dat": {
+   "size": 6805,
+   "md5": "4da3d2fa537e5aa95a3c10e1a9190e4c"
+  },
+  "derivatives/sub-08/ses-01/sub-08_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "15b4299bd3bd5080f96597819d962b99"
+  },
+  "derivatives/sub-08/ses-01/sub-08_ses-01_report.pkl": {
+   "size": 471,
+   "md5": "f3a0e8879bdd61e6da4f76b54c14bf53"
+  },
+  "derivatives/sub-08/ses-02/sub-08_ses-02_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "55836223cb08d56169f4a479d8e92223"
+  },
+  "derivatives/sub-08/ses-02/sub-08_ses-02_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "fe55716ea2c9419682449a7148cf9e3c"
+  },
+  "derivatives/sub-08/ses-02/sub-08_ses-02_events.dat": {
+   "size": 6814,
+   "md5": "b915df6f82ef1421ffc36228b497a8b0"
+  },
+  "derivatives/sub-08/ses-02/sub-08_ses-02_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "4a1906b0b9e4d489988ad1dbe76d9a89"
+  },
+  "derivatives/sub-08/ses-02/sub-08_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "2c2bac707bbdcc04ecb6d9446fd6f15e"
+  },
+  "derivatives/sub-08/ses-03/sub-08_ses-03_baseline-epo.fif": {
+   "size": 4202065,
+   "md5": "d321ddc5b30a2e04ee37173ed22ecf72"
+  },
+  "derivatives/sub-08/ses-03/sub-08_ses-03_eeg-epo.fif": {
+   "size": 118089993,
+   "md5": "013a31c56df324bf684f94194962b49b"
+  },
+  "derivatives/sub-08/ses-03/sub-08_ses-03_events.dat": {
+   "size": 3512,
+   "md5": "4faec2c192b14a6c09fb56e18ecf761e"
+  },
+  "derivatives/sub-08/ses-03/sub-08_ses-03_exg-epo.fif": {
+   "size": 7388593,
+   "md5": "03c440d3adb9fb538c485359901b6d82"
+  },
+  "derivatives/sub-08/ses-03/sub-08_ses-03_report.pkl": {
+   "size": 471,
+   "md5": "8a60f03168228ede3723e70c199f4676"
+  },
+  "derivatives/sub-09/ses-01/sub-09_ses-01_baseline-epo.fif": {
+   "size": 4208669,
+   "md5": "578550861436264043939eb2b8e414ed"
+  },
+  "derivatives/sub-09/ses-01/sub-09_ses-01_eeg-epo.fif": {
+   "size": 236164497,
+   "md5": "6d63d10fb1a1e3ac9bdf6bca2334710a"
+  },
+  "derivatives/sub-09/ses-01/sub-09_ses-01_events.dat": {
+   "size": 6816,
+   "md5": "e80484086774f451baf683dfadaedf24"
+  },
+  "derivatives/sub-09/ses-01/sub-09_ses-01_exg-epo.fif": {
+   "size": 14775097,
+   "md5": "80a73c6480347f12779c2e746e6b517f"
+  },
+  "derivatives/sub-09/ses-01/sub-09_ses-01_report.pkl": {
+   "size": 663,
+   "md5": "4afd73a1c34d4aebce7fb95ddb9e151c"
+  },
+  "derivatives/sub-09/ses-02/sub-09_ses-02_baseline-epo.fif": {
+   "size": 4208617,
+   "md5": "c016cc7ba7415de57a4d3cef0eeac0f8"
+  },
+  "derivatives/sub-09/ses-02/sub-09_ses-02_eeg-epo.fif": {
+   "size": 236164445,
+   "md5": "4cfc744e7d23cf583b11ef291a8c95ab"
+  },
+  "derivatives/sub-09/ses-02/sub-09_ses-02_events.dat": {
+   "size": 6805,
+   "md5": "60d4df37ada7529fe10a2a1823ff8a20"
+  },
+  "derivatives/sub-09/ses-02/sub-09_ses-02_exg-epo.fif": {
+   "size": 14775045,
+   "md5": "004d0efa10ac95921b5a0535028cae15"
+  },
+  "derivatives/sub-09/ses-02/sub-09_ses-02_report.pkl": {
+   "size": 567,
+   "md5": "6ef3af3e0375497f7a49a29c0b581009"
+  },
+  "derivatives/sub-09/ses-03/sub-09_ses-03_baseline-epo.fif": {
+   "size": 4208695,
+   "md5": "3a51b3cbc841848125ca59cd64b2ee16"
+  },
+  "derivatives/sub-09/ses-03/sub-09_ses-03_eeg-epo.fif": {
+   "size": 236164523,
+   "md5": "ce35c3f959b9811c8a7bded746696e71"
+  },
+  "derivatives/sub-09/ses-03/sub-09_ses-03_events.dat": {
+   "size": 6806,
+   "md5": "e55a8364a257b6c46f26ca94526d3244"
+  },
+  "derivatives/sub-09/ses-03/sub-09_ses-03_exg-epo.fif": {
+   "size": 14775123,
+   "md5": "403b78d720fdf20142158d11b02fcb27"
+  },
+  "derivatives/sub-09/ses-03/sub-09_ses-03_report.pkl": {
+   "size": 831,
+   "md5": "6c71dd6dee979dec742579cfc81ad043"
+  },
+  "derivatives/sub-10/ses-01/sub-10_ses-01_baseline-epo.fif": {
+   "size": 4208643,
+   "md5": "82c0434257a66205713861e4af0f964d"
+  },
+  "derivatives/sub-10/ses-01/sub-10_ses-01_eeg-epo.fif": {
+   "size": 236164471,
+   "md5": "7a7c96d6fbd575c6b576a3c056ad5945"
+  },
+  "derivatives/sub-10/ses-01/sub-10_ses-01_events.dat": {
+   "size": 6796,
+   "md5": "f8f0c2d3f6484e8cfa477feff34bd23d"
+  },
+  "derivatives/sub-10/ses-01/sub-10_ses-01_exg-epo.fif": {
+   "size": 14775071,
+   "md5": "fd97b01d2357a3a01f36029bc8e4fefc"
+  },
+  "derivatives/sub-10/ses-01/sub-10_ses-01_report.pkl": {
+   "size": 639,
+   "md5": "6629a6efa9a7ed21753c961fda7e4de0"
+  },
+  "derivatives/sub-10/ses-02/sub-10_ses-02_baseline-epo.fif": {
+   "size": 4208643,
+   "md5": "0f8d28ce36b18624a38269d082c99aa3"
+  },
+  "derivatives/sub-10/ses-02/sub-10_ses-02_eeg-epo.fif": {
+   "size": 236164471,
+   "md5": "ca080f1dec055c84f660e5716a17f3af"
+  },
+  "derivatives/sub-10/ses-02/sub-10_ses-02_events.dat": {
+   "size": 6818,
+   "md5": "386cc0593e38f687203e715e1ae32232"
+  },
+  "derivatives/sub-10/ses-02/sub-10_ses-02_exg-epo.fif": {
+   "size": 14775071,
+   "md5": "3ea14aeb1c25f805f79b3d46ed02ee64"
+  },
+  "derivatives/sub-10/ses-02/sub-10_ses-02_report.pkl": {
+   "size": 471,
+   "md5": "2b20e075569fd22addee09289b75ef24"
+  },
+  "derivatives/sub-10/ses-03/sub-10_ses-03_baseline-epo.fif": {
+   "size": 4208617,
+   "md5": "9851f4b947da1a4503c6526c16876b5b"
+  },
+  "derivatives/sub-10/ses-03/sub-10_ses-03_eeg-epo.fif": {
+   "size": 236164445,
+   "md5": "7631c155189c43a57a2bf16879d03753"
+  },
+  "derivatives/sub-10/ses-03/sub-10_ses-03_events.dat": {
+   "size": 6803,
+   "md5": "9a411aa531252a4144c5d4c0d4770984"
+  },
+  "derivatives/sub-10/ses-03/sub-10_ses-03_exg-epo.fif": {
+   "size": 14775045,
+   "md5": "877f21db021bd71462fb155a7461886b"
+  },
+  "derivatives/sub-10/ses-03/sub-10_ses-03_report.pkl": {
+   "size": 495,
+   "md5": "e031643f8474c91a32dfdcfaea54eda8"
+  },
+  "sub-01/ses-01/eeg/sub-01_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 771058176,
+   "md5": "99304b3e9f43792d625ad36cf4153f3e"
+  },
+  "sub-01/ses-02/eeg/sub-01_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 702878208,
+   "md5": "e0ba741cc1f219f8a11c5ef183e6efc2"
+  },
+  "sub-01/ses-03/eeg/sub-01_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 408271605,
+   "md5": "4de9738d5fcc3fa13d2f522715bc9221"
+  },
+  "sub-02/ses-01/eeg/sub-02_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 686464512,
+   "md5": "8c682af8b679705be2462aae5a198ed2"
+  },
+  "sub-02/ses-02/eeg/sub-02_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 695723520,
+   "md5": "3c6eb2046eb2908e26a10a7d0b1c6e80"
+  },
+  "sub-02/ses-03/eeg/sub-02_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 691935744,
+   "md5": "83b25f16b2cde9299a09f9a362276f7b"
+  },
+  "sub-03/ses-01/eeg/sub-03_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 686885376,
+   "md5": "85e93049ac0bda6382786c259a60473a"
+  },
+  "sub-03/ses-02/eeg/sub-03_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 688568832,
+   "md5": "ef23d403e44db7ea100f88050d2462ba"
+  },
+  "sub-03/ses-03/eeg/sub-03_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 404064768,
+   "md5": "2bddd960328f3aab62a9b6868e04a45c"
+  },
+  "sub-04/ses-01/eeg/sub-04_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 680993280,
+   "md5": "96015fbc1b1970bbda52a5c37a0f221e"
+  },
+  "sub-04/ses-02/eeg/sub-04_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 693619200,
+   "md5": "0586a84ba9be6c8cd491c3ab40850406"
+  },
+  "sub-04/ses-03/eeg/sub-04_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 689410560,
+   "md5": "3998c605c586d429323c14fa66f8fb74"
+  },
+  "sub-05/ses-01/eeg/sub-05_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 683097600,
+   "md5": "da31613d283c49beefad7e3b9b822942"
+  },
+  "sub-05/ses-02/eeg/sub-05_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 678468096,
+   "md5": "b026e597870da201279ace6cafd889d3"
+  },
+  "sub-05/ses-03/eeg/sub-05_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 696565248,
+   "md5": "926ada65b905eb37d48e1218b81bea23"
+  },
+  "sub-06/ses-01/eeg/sub-06_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 677205504,
+   "md5": "12ab441a598ac8842259a6676c481d9c"
+  },
+  "sub-06/ses-02/eeg/sub-06_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 686885376,
+   "md5": "e82f2fde3a7c964e4892914e12ea738e"
+  },
+  "sub-06/ses-03/eeg/sub-06_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 503388672,
+   "md5": "2f3c8f1608e382ccbb521b58ab335e9e"
+  },
+  "sub-07/ses-01/eeg/sub-07_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 679730688,
+   "md5": "40a15d7ec000bfb2aa2ec3dbeac0f375"
+  },
+  "sub-07/ses-02/eeg/sub-07_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 676363776,
+   "md5": "58937c030cd46bc5dcb066c3f213891b"
+  },
+  "sub-07/ses-03/eeg/sub-07_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 696565248,
+   "md5": "6d8a5ebdaf1eefab751a1c3f25d211a6"
+  },
+  "sub-08/ses-01/eeg/sub-08_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 681414144,
+   "md5": "4e6882869e3f3971fa4a3f96b2f43238"
+  },
+  "sub-08/ses-02/eeg/sub-08_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 694881792,
+   "md5": "f598033aff3ae7123a3d8f040c197bd0"
+  },
+  "sub-08/ses-03/eeg/sub-08_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 404064768,
+   "md5": "9232720390413dabde6cc91c02997861"
+  },
+  "sub-09/ses-01/eeg/sub-09_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 683939328,
+   "md5": "6785968ed8607bbe96a5e001887667c2"
+  },
+  "sub-09/ses-02/eeg/sub-09_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 672155136,
+   "md5": "df08d244e06c66fa8f03cb7551c4a699"
+  },
+  "sub-09/ses-03/eeg/sub-09_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 681414144,
+   "md5": "3627c0e6e8707f6c91ebc79b908b0bee"
+  },
+  "sub-10/ses-01/eeg/sub-10_ses-01_task-innerspeech_eeg.bdf": {
+   "size": 673838592,
+   "md5": "47da206a83bfb09136d2b1cd86c0a608"
+  },
+  "sub-10/ses-02/eeg/sub-10_ses-02_task-innerspeech_eeg.bdf": {
+   "size": 680572416,
+   "md5": "93060eb64ff46412ec33b7ffe37f35bf"
+  },
+  "sub-10/ses-03/eeg/sub-10_ses-03_task-innerspeech_eeg.bdf": {
+   "size": 674259456,
+   "md5": "654b1a0b75b52080b2d5187c4a458d1a"
+  }
+ }
+}
