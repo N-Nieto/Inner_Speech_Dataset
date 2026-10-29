@@ -83,15 +83,6 @@ get_derivatives(
 #     progress=False,
 # )
 
-# Option 3: Download 1 subject of raw eeg data.
-get_raw_eeg(
-    dataset_path=data_dir,
-    subjects="01",
-    sessions="01",
-    verbose=True,
-    progress=True,
-)
-
 # Option 4: Exploration for 1 subject and one session.
 get_derivatives(
     dataset_path=data_dir,
