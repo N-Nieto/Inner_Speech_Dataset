@@ -88,7 +88,7 @@ get_derivatives(
     dataset_path=data_dir,
     subjects="01",
     sessions="01",
-    file_types=["eeg","events"],
+    file_types=["eeg", "events"],
     verbose=True,
     progress=False,
 )
